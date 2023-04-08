@@ -15,7 +15,8 @@ results/
 test_labels.txt
 testtransform.png
 
-
+bin/
+miniconda3/
 
 
 
