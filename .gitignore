@@ -1,24 +1,4 @@
-./conda
-./.cache
-*.egg-info
-./.config
-./.dotnet
-./.lmod.d
-./.local
-./ssh
-./.vscode-server
-/bin
-DFGC-2022-1st-place-train-VRA
-./miniconda3
-./local
 
-./.bashhistory
-./.bashrc
-./.cache
-./.conda
-./.config
-./.dotnet
-./.netrc
 
 .*
 !.gitignore
