@@ -77,8 +77,8 @@ def extract_video(input_dir, model, scale=1.3):
                 crop = original_frames[i:i + batch_size][index][ymin:ymin + size_bb, xmin:xmin + size_bb]
                 face_images.append(crop)
 
-                #stop only use first face
-                break
+                # #stop only use first face
+                # break
 
 
             else:
@@ -96,7 +96,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Extract face from videos')
            
     parser.add_argument('--input_root_path', type=str, default='/d/hpc/projects/FRI/ldragar/original_dataset/C2')           
-    parser.add_argument('--output_root_path', type=str, default='/d/hpc/projects/FRI/ldragar/dataset/C2')             
+    parser.add_argument('--output_root_path', type=str, default='/d/hpc/projects/FRI/ldragar/dataset/C2_test')             
     parser.add_argument('--gpu_id', type=int, default=0)
 
     parser.add_argument('--scale', type=float, default=1.3)

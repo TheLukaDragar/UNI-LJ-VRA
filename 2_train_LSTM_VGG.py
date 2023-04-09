@@ -40,7 +40,6 @@ def train_val_test_split(dataset, train_prop=0.7, val_prop=0.2, test_prop=0.1):
 
     return random_split(dataset, [train_length, val_length, test_length])
 
-
 class VGGFaceResNet50(nn.Module):
     def __init__(self, pretrained=True):
         super(VGGFaceResNet50, self).__init__()
@@ -51,7 +50,7 @@ class VGGFaceResNet50(nn.Module):
         return self.backbone(x)
 
 class MOSVideoSequenceModel(nn.Module):
-    def __init__(self, backbone_name, lstm_hidden_size=256, lstm_num_layers=3):
+    def __init__(self, backbone_name, lstm_hidden_size=256, lstm_num_layers=1):
         super(MOSVideoSequenceModel, self).__init__()
 
         # Load the pre-trained backbone model
@@ -70,17 +69,19 @@ class MOSVideoSequenceModel(nn.Module):
         self.fc = nn.Linear(lstm_hidden_size, 1)
 
     def forward(self, x):
+        batch_size, seq_len, c, h, w = x.shape
+        x = x.view(batch_size * seq_len, c, h, w)  # Reshape to (batch_size * seq_len, c, h, w)
+
         # Extract features from the backbone model
-       # Extract features from the input sequence using the backbone
-        features = [self.backbone(frame) for frame in x]
-        features = torch.stack(features, dim=1)
+        features = self.backbone(x)  # Shape: (batch_size * seq_len, feature_dim)
+        features = features.view(batch_size, seq_len, -1)  # Reshape to (batch_size, seq_len, feature_dim)
 
         # Pass the features through the LSTM layer
         lstm_out, _ = self.lstm(features)
 
         # Predict the MOS score using the fully connected layer
-        mos_score = self.fc(lstm_out[:, -1, :])
-        return mos_score
+        mos_score = self.fc(lstm_out[:, -1, :])  # Shape: (batch_size, 1)
+        return mos_score.view(-1)  # Reshape to (batch_size,)
 
 class MOSPredictor(pl.LightningModule):
     def __init__(self, backbone_name="vggface_r50", learning_rate=1e-3):
@@ -96,18 +97,18 @@ class MOSPredictor(pl.LightningModule):
         return self.model(x)
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
-        y_pred = self(x)
-        loss = self.loss(y_pred, y)
-        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        return loss
+            x, y = batch
+            y_pred = self(x)
+            loss = self.loss(y_pred.view(-1, 1), y.view(-1, 1))  # Reshape y_pred and y to (batch_size, 1)
+            self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+            return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_pred = self(x)
-        loss = self.loss(y_pred, y)
+        loss = self.loss(y_pred.view(-1, 1), y.view(-1, 1))  # Reshape y_pred and y to (batch_size, 1)
         self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-
+        return loss
 
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=2e-5)
@@ -125,24 +126,20 @@ class MOSPredictor(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         x, y = batch
-        preds = self(x)
-        self.test_preds.append(preds)
-        self.test_labels.append(y)
-        
+        y_pred = self(x)
 
-    def on_test_epoch_end(self):
-        test_preds = torch.cat(self.test_preds)
-        test_labels = torch.cat(self.test_labels)
-        test_preds = test_preds.view(-1)
-        plcc = self.pearson_corr_coef(test_preds, test_labels)
-        spearman = self.spearman_corr_coef(test_preds, test_labels)
-        mse_log = self.mse_log(test_preds, test_labels)
-        rmse = torch.sqrt(mse_log)
+        # Calculate and log Pearson correlation coefficient
+        pcc = self.pearson_corr_coef(y_pred, y)
+        self.log("test_pearson_corr_coef", pcc)
 
-        self.log('test_plcc', plcc)
-        self.log('test_spearman', spearman)
-        self.log('test_rmse', rmse)
+        # Calculate and log Spearman correlation coefficient
+        scc = self.spearman_corr_coef(y_pred, y)
+        self.log("test_spearman_corr_coef", scc)
 
+        # Calculate and log RMSE
+        mse = self.mse_log(y_pred, y)
+        rmse = torch.sqrt(mse)
+        self.log("test_rmse", rmse)
         
 
  
@@ -199,11 +196,11 @@ wandb_logger.log_hyperparams(model.hparams)
 
 trainer = pl.Trainer(accelerator='gpu', 
                      max_epochs=100, 
-                       log_every_n_steps=100,
+                       log_every_n_steps=30,
                      callbacks=[
                          EarlyStopping(monitor="val_loss", 
                                        mode="min",
-                                       patience=2,
+                                       patience=5,
                                       )
                         ]
                         ,logger=wandb_logger
