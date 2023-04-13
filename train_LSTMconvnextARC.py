@@ -83,17 +83,17 @@ class ConvNeXt(pl.LightningModule):
         
     def forward(self, sample):
         emb, x = sample
+         # Assuming x is a tensor of shape (batch_size, num_frames, 3, height, width)
         batch_size, num_frames, _, height, width = x.size()
         x = x.view(batch_size * num_frames, 3, height, width)
-
+        
         x = self.backbone(x)  # Output shape: (batch_size * num_frames, num_features)
         x = self.drop(x)
         
         x = x.view(batch_size, num_frames, -1)
-        x_with_emb = torch.cat((x, emb.unsqueeze(1).expand(-1, num_frames, -1)), dim=2)  # Concatenate embeddings with features
-
-        _, (h_n, _) = self.lstm(x_with_emb)  # h_n has shape (num_layers, batch_size, lstm_hidden_size)
-
+        cat = torch.cat([x, emb], dim=2)  # Output shape: (batch_size, num_frames, num_features + 512)
+        _, (h_n, _) = self.lstm(cat)  # h_n has shape (num_layers, batch_size, lstm_hidden_size)
+        
         logit = self.fc(h_n[-1])  # Use the last layer's hidden state, output shape: (batch_size, 1)
         return logit
     
@@ -151,10 +151,10 @@ if __name__ == '__main__':
 
     dataset_root = '/d/hpc/projects/FRI/ldragar/original_dataset'
     labels_file = '/d/hpc/projects/FRI/ldragar/label/train_set.csv'
-    batch_size = 4
+    batch_size = 2
     seq_len = 10
     hodden_size = 512
-    num_layers = 1
+    num_layers = 2
 
 
 
@@ -179,7 +179,8 @@ if __name__ == '__main__':
 
     #print first train example
 
-    for x,y in train_dl:
+    for emb,x,y in train_dl:
+        print(emb.shape)
         print(x.shape)
         print(y.shape)
         print(y)
@@ -205,7 +206,7 @@ if __name__ == '__main__':
     wandb_logger.log_hyperparams({'num_layers': num_layers})
 
     #accumulate gradient
-    wandb_logger.log_hyperparams({'accumulate_grad_batches': 4})
+    wandb_logger.log_hyperparams({'accumulate_grad_batches': 8})
 
     
 
@@ -214,12 +215,14 @@ if __name__ == '__main__':
 
 
     #save hyperparameters
+    wandb_run_id = wandb_logger.version
+    #save hyperparameters
     wandb_logger.log_hyperparams(model.hparams)
     checkpoint_callback = ModelCheckpoint(monitor='val_loss', 
                                         dirpath='/d/hpc/projects/FRI/ldragar/checkpoints/', 
-                                        filename='convnext_xlarge_384_in22ft1k-{epoch:02d}-{val_loss:.2f}', mode='min', save_top_k=1)
+                                        filename=f'{wandb_run_id}-{{epoch:02d}}-{{val_loss:.2f}}', mode='min', save_top_k=1)
 
-    num_nodes = 2  # or the number of nodes you are using
+    num_nodes = 1  # or the number of nodes you are using
       # or the number of GPUs available on each node
 
 
@@ -233,7 +236,7 @@ if __name__ == '__main__':
                         callbacks=[
                             EarlyStopping(monitor="val_loss", 
                                         mode="min",
-                                        patience=10,
+                                        patience=4,
                                         ),
                                 checkpoint_callback
 
@@ -248,7 +251,10 @@ if __name__ == '__main__':
     # Train the model
     trainer.fit(model, train_dl, val_dl)
     # Test the model
+    print("testing current model")
     trainer.test(model, test_dl)
+    print("testing best model")
+    trainer.test(model, test_dl, ckpt_path='best')
 
 
 

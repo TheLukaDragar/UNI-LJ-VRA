@@ -1,4 +1,5 @@
 
+import math
 import os
 from dataset_1 import FaceFramesDataset, FaceFramesPredictionDataset, RandomFaceFramesDataset
 from dataset_1 import FaceFramesDataset, build_transforms
@@ -51,7 +52,13 @@ class ConvNeXt(pl.LightningModule):
         
         #ADDED THIS
         self.backbone = self.backbone.module
-        
+
+        #freeze 50% of the layers
+        num_layers_to_freeze = math.ceil(len(list(self.backbone.parameters())) * 0.5)
+        # Freeze 50% of the layers
+        for i, param in enumerate(self.backbone.parameters()):
+            if i < num_layers_to_freeze:
+                param.requires_grad = False
 
 
         self.drop = nn.Dropout(dropout)
@@ -174,7 +181,7 @@ if __name__ == '__main__':
         print(y)
         break
 
-    wandb_logger = WandbLogger(project='luka_borut', name='convnext_xlarge_384_in22ft1k', save_dir='/d/hpc/projects/FRI/ldragar/wandb/')
+    wandb_logger = WandbLogger(project='luka_borut', name='freezed_convnext_xlarge_384_in22ft1k', save_dir='/d/hpc/projects/FRI/ldragar/wandb/')
 
 
     #convnext_xlarge_384_in22ft1k

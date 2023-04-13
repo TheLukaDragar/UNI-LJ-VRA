@@ -49,9 +49,10 @@ class ConvNeXt(pl.LightningModule):
         self.backbone.head.fc = nn.Linear(n_features, 2)
         self.backbone = torch.nn.DataParallel(self.backbone)
         self.backbone.load_state_dict(torch.load('/d/hpc/projects/FRI/ldragar/convnext_xlarge_384_in22ft1k_30.pth'))
+        self.backbone = self.backbone.module
 
         #replace head with identity
-        self.backbone.module.head.fc = nn.Identity()
+        self.backbone.head.fc = nn.Identity()
 
         self.drop = nn.Dropout(dropout)
         #self.fc = nn.Linear(self.backbone.num_features, 1)
@@ -97,7 +98,7 @@ class ConvNeXt(pl.LightningModule):
         *x, y = batch
         preds = self(x)
         loss = self.RMSE(preds, y)
-        self.log('train_loss', loss.item(), on_epoch=True, prog_bar=True)
+        self.log('train_loss', loss.item(), on_epoch=True, prog_bar=True,sync_dist=True)
         
         return loss
     
@@ -105,7 +106,7 @@ class ConvNeXt(pl.LightningModule):
         *x, y = batch
         preds = self(x)
         loss = self.RMSE(preds, y)
-        self.log('val_loss', loss.item(), on_epoch=True, prog_bar=True)
+        self.log('val_loss', loss.item(), on_epoch=True, prog_bar=True,sync_dist=True)
         
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=2e-5)
@@ -159,7 +160,7 @@ if __name__ == '__main__':
 
     face_frames_dataset = RandomArcFaceFramesDataset(dataset_root, labels_file, transform=transform_train)
   
-    train_ds, val_ds, test_ds = train_val_test_split(face_frames_dataset)
+    train_ds, val_ds, test_ds = train_val_test_split(face_frames_dataset,train_prop=0.5, val_prop=0.25, test_prop=0.25)
 
     train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=4)
     val_dl = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=4)
@@ -192,17 +193,18 @@ if __name__ == '__main__':
 
 
 
-
+    wandb_run_id = wandb_logger.version
     #save hyperparameters
     wandb_logger.log_hyperparams(model.hparams)
     checkpoint_callback = ModelCheckpoint(monitor='val_loss', 
                                         dirpath='/d/hpc/projects/FRI/ldragar/checkpoints/', 
-                                        filename='convnext_xlarge_384_in22ft1k-{epoch:02d}-{val_loss:.2f}', mode='min', save_top_k=1)
+                                        filename=f'{wandb_run_id}-{{epoch:02d}}-{{val_loss:.2f}}', mode='min', save_top_k=1)
 
 
 
-    trainer = pl.Trainer(accelerator='gpu', 
+    trainer = pl.Trainer(accelerator='gpu',
                         max_epochs=100, 
+                        devices=1,
                         log_every_n_steps=200,
                         callbacks=[
                             EarlyStopping(monitor="val_loss", 
@@ -218,13 +220,21 @@ if __name__ == '__main__':
                         )
 
     #Train the model
+    
     trainer.fit(model, train_dl, val_dl)
-    # Test the model
+    # Test the model on the best checkpoint
+
+    print(f" testing curent model")
     trainer.test(model, test_dl)
 
+    print(f" testing best model")
+    trainer.test(model, test_dl,ckpt_path='best')
+    # print(f" testing best model path: {checkpoint_callback.best_model_path}")
+    # trainer.test(model, test_dl,ckpt_path=checkpoint_callback.best_model_path)
 
-
-
+    #load best model
+    print(f" loading best model path: {checkpoint_callback.best_model_path}")
+    model = model.load_from_checkpoint(checkpoint_callback.best_model_path)
 
     #PREDICTIONS
     model.eval()  # set the model to evaluation mode
@@ -234,7 +244,7 @@ if __name__ == '__main__':
     test_labels_dir = '/d/hpc/projects/FRI/ldragar/label/'
     stages = ['1','2','3']
     #get wandb run id
-    wandb_run_id = wandb_logger.version
+    
 
     
 

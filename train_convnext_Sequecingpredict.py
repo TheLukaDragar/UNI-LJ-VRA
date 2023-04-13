@@ -1,6 +1,6 @@
 
 import os
-from dataset_1 import FaceFramesDataset, FaceFramesPredictionDataset, RandomFaceFramesDataset
+from dataset_1 import FaceFramesDataset, FaceFramesPredictionDataset, RandomFaceFramesDataset, VideoFramesDataset, VideoFramesPredictionDataset
 from dataset_1 import FaceFramesDataset, build_transforms
 import torch
 import torch.nn as nn
@@ -51,17 +51,23 @@ class ConvNeXt(pl.LightningModule):
         
         #ADDED THIS
         self.backbone = self.backbone.module
-        
+        self.backbone.head.fc = nn.Identity()
 
 
         self.drop = nn.Dropout(dropout)
         #self.fc = nn.Linear(self.backbone.num_features, 1)
-        self.fc = nn.Linear(2, 1)
+
+        #average and std feature vector
+        self.fc = nn.Linear(n_features+n_features, 512)
+        self.fc2 = nn.Linear(512, 256)
+        self.fc3 = nn.Linear(256, 64)
+        self.fc4 = nn.Linear(64, 1)
         self.mse = nn.MSELoss()
         
         
         self.test_preds = []
         self.test_labels = []
+
 
         # Initialize PearsonCorrCoef metric
         self.pearson_corr_coef = torchmetrics.PearsonCorrCoef().to(self.device)
@@ -82,16 +88,34 @@ class ConvNeXt(pl.LightningModule):
         return torch.sqrt(mse)
         
     def forward(self, x):
-        x = self.backbone(x)
-        x = self.drop(x)
-        logit = self.fc(x)
+        batch_size, sequence_length, channels, height, width = x.shape
+        x = x.view(batch_size * sequence_length, channels, height, width)
+
+        features = self.backbone(x)  # Output shape: (batch_size * sequence_length, n_features)
+
+        # Reshape to (batch_size, sequence_length, n_features)
+        features = features.view(batch_size, sequence_length, -1)
+
+        # Compute mean and standard deviation along the sequence dimension
+        mean_features = torch.mean(features, dim=1)
+        std_features = torch.std(features, dim=1)
+
+        # Concatenate mean and standard deviation feature vectors
+        concat_features = torch.cat((mean_features, std_features), dim=1)
+        x = self.drop(concat_features)
+        x = torch.nn.functional.relu(self.fc(x))
+        x = torch.nn.functional.relu(self.fc2(x))
+        x = torch.nn.functional.relu(self.fc3(x))
+        x = self.fc4(x)
+        logit = x
+
         return logit
     
     def training_step(self, batch, batch_idx):
         x, y = batch
         preds = self(x)
         loss = self.RMSE(preds, y)
-        self.log('train_loss', loss.item(), on_epoch=True, prog_bar=True)
+        self.log('train_loss', loss.item(), on_epoch=True, prog_bar=True,sync_dist=True)
         
         return loss
     
@@ -99,7 +123,7 @@ class ConvNeXt(pl.LightningModule):
         x, y = batch
         preds = self(x)
         loss = self.RMSE(preds, y)
-        self.log('val_loss', loss.item(), on_epoch=True, prog_bar=True)
+        self.log('val_loss', loss.item(), on_epoch=True, prog_bar=True,sync_dist=True)
         
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=2e-5)
@@ -138,10 +162,10 @@ class ConvNeXt(pl.LightningModule):
 
 if __name__ == '__main__':
 
-    dataset_root = '/d/hpc/projects/FRI/ldragar/dataset'
+    dataset_root = '/d/hpc/projects/FRI/ldragar/original_dataset'
     labels_file = '/d/hpc/projects/FRI/ldragar/label/train_set.csv'
-    batch_size = 16
-    random_face_frames = True
+    batch_size = 1
+    seq_len = 10
 
 
 
@@ -152,77 +176,80 @@ if __name__ == '__main__':
 
 
 
-    if random_face_frames:
+   
 
-        face_frames_dataset = RandomFaceFramesDataset(dataset_root, labels_file, transform=transform_train)
-    else:
-        face_frames_dataset = FaceFramesDataset(dataset_root, labels_file, transform=transform_train)
+    # face_frames_dataset =VideoFramesDataset(dataset_root, labels_file,transform=transform_train,sequence_length=seq_len)
+    
 
-    train_ds, val_ds, test_ds = train_val_test_split(face_frames_dataset,train_prop=0.5, val_prop=0.25, test_prop=0.25)
+    # train_ds, val_ds, test_ds = train_val_test_split(face_frames_dataset)
 
-    train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=4)
-    val_dl = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=4)
-    test_dl = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=4)
+    # train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=4)
+    # val_dl = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=4)
+    # test_dl = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=4)
 
-    print(f"loaded {len(train_dl)} train batches and {len(val_dl)} val batches of size {train_dl.batch_size}")
+    # print(f"loaded {len(train_dl)} train batches and {len(val_dl)} val batches of size {train_dl.batch_size}")
 
-    #print first train example
+    # #print first train example
 
-    for x,y in train_dl:
-        print(x.shape)
-        print(y.shape)
-        print(y)
-        break
+    # for x,y in train_dl:
+    #     print(x.shape)
+    #     print(y.shape)
+    #     print(y)
+    #     break
 
-    wandb_logger = WandbLogger(project='luka_borut', name='convnext_xlarge_384_in22ft1k', save_dir='/d/hpc/projects/FRI/ldragar/wandb/')
+    # wandb_logger = WandbLogger(project='luka_borut', name='Seqencedconvnext_xlarge_384_in22ft1k', save_dir='/d/hpc/projects/FRI/ldragar/wandb/')
 
 
     #convnext_xlarge_384_in22ft1k
     model=ConvNeXt(model_name='convnext_xlarge_384_in22ft1k', dropout=0.1)
 
 
-    #log
-    #API KEY 242d18971b1b7df61cceaa43724c3b1e6c17c49c
-    wandb_logger.watch(model, log='all', log_freq=100)
-    #log batch size
-    wandb_logger.log_hyperparams({'batch_size': batch_size})
-    #random face frames
-    wandb_logger.log_hyperparams({'random_face_frames': random_face_frames})
+    # #log
+    # #API KEY 242d18971b1b7df61cceaa43724c3b1e6c17c49c
+    # wandb_logger.watch(model, log='all', log_freq=100)
+    # #log batch size
+    # wandb_logger.log_hyperparams({'batch_size': batch_size})
+    # #random face frames
+    # wandb_logger.log_hyperparams({'seq_len': seq_len})
 
 
-    wandb_run_id = wandb_logger.version
+    # wandb_run_id = wandb_logger.version
 
-    #save hyperparameters
-    wandb_logger.log_hyperparams(model.hparams)
-    checkpoint_callback = ModelCheckpoint(monitor='val_loss', 
-                                        dirpath='/d/hpc/projects/FRI/ldragar/checkpoints/', 
-                                        filename=f'{wandb_run_id}-{{epoch:02d}}-{{val_loss:.2f}}', mode='min', save_top_k=1)
+    # #save hyperparameters
+    # wandb_logger.log_hyperparams(model.hparams)
+    # checkpoint_callback = ModelCheckpoint(monitor='val_loss', 
+    #                                     dirpath='/d/hpc/projects/FRI/ldragar/checkpoints/', 
+    #                                     filename=f'{wandb_run_id}-{{epoch:02d}}-{{val_loss:.2f}}', mode='min', save_top_k=1)
 
 
-    trainer = pl.Trainer(accelerator='gpu', 
-                        max_epochs=100, 
-                        log_every_n_steps=200,
-                        callbacks=[
-                            EarlyStopping(monitor="val_loss", 
-                                        mode="min",
-                                        patience=10,
-                                        ),
-                                checkpoint_callback
+    # trainer = pl.Trainer(accelerator='gpu', strategy='ddp',
+    #                     num_nodes=1,
+    #                     devices=[0,1],
+    #                     max_epochs=25, #SHOULD BE enough
+    #                     log_every_n_steps=200,
+    #                     callbacks=[
+    #                         EarlyStopping(monitor="val_loss", 
+    #                                     mode="min",
+    #                                     patience=2,
+    #                                     ),
+    #                             checkpoint_callback
 
                                         
-                            ]
-                            ,logger=wandb_logger
+    #                         ]
+    #                         ,logger=wandb_logger,
+    #                         accumulate_grad_batches=4,
 
-                        )
+    #                     )
 
-    # Train the model
-    trainer.fit(model, train_dl, val_dl)
-    # Test the model
-    trainer.test(model, test_dl)
-
-
+    # # Train the model
+    # trainer.fit(model, train_dl, val_dl)
+    # # Test the model
+    # trainer.test(model, test_dl)
 
 
+
+    #load best model
+    model = ConvNeXt.load_from_checkpoint(checkpoint_path='/d/hpc/projects/FRI/ldragar/checkpoints/l817ln0m-epoch=58-val_loss=0.17.ckpt')
 
     #PREDICTIONS
     model.eval()  # set the model to evaluation mode
@@ -236,7 +263,7 @@ if __name__ == '__main__':
 
     
 
-    resultsdir = os.path.join('/d/hpc/projects/FRI/ldragar/results/', wandb_run_id)
+    resultsdir = os.path.join('/d/hpc/projects/FRI/ldragar/results/', 'seqpredicbest')
     if not os.path.exists(resultsdir):
         os.makedirs(resultsdir)
 
@@ -246,7 +273,7 @@ if __name__ == '__main__':
         test_labels = []
         test_names = []
 
-        ds = FaceFramesPredictionDataset(os.path.join(test_labels_dir, name), dataset_root=dataset_root,transform=transform_test)
+        ds = VideoFramesPredictionDataset(labels_file=os.path.join(test_labels_dir, name), dataset_root=dataset_root,transform=transform_test)
         print(f"loaded {len(ds)} test examples")
 
         with torch.no_grad():

@@ -299,6 +299,70 @@ class VideoFramesDataset(Dataset):
         return len(self.video_files)
     
 
+class VideoFramesPredictionDataset(Dataset):
+    def __init__(self, dataset_root=None, labels_file=None, transform=None, sequence_length=5):
+        self.dataset_root = dataset_root
+        self.transform = transform
+        self.sequence_length = sequence_length
+        self.labels_file = labels_file
+        
+
+        print("Loading dataset from {}...".format(dataset_root))
+
+        lines = []
+
+        with open(self.labels_file, 'r') as f:
+            lines = [line.strip() for line in f]
+
+        # Read the list of video directories from the provided file
+        self.video_dirs = [os.path.join(self.dataset_root, line) for line in lines]
+        self.names = lines
+
+        print("Loaded {} videos".format(len(self.video_dirs)))
+
+    def __getitem__(self, index):
+        video_file = self.video_dirs[index]
+        name = self.names[index]
+
+        cap = cv2.VideoCapture(video_file)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+        # Select sequence_length equally spaced frames from the video
+        frame_indices = torch.linspace(0, total_frames - 1, steps=self.sequence_length).long().tolist()
+        sequence = []
+        for i in range(total_frames):
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            if i in frame_indices:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                if self.transform:
+                    frame = self.transform(image=frame)["image"]
+                sequence.append(frame)
+
+            if len(sequence) == self.sequence_length:
+                break
+
+        cap.release()
+
+        if len(sequence) < self.sequence_length:
+            
+            print("Warning: video {} has only {} frames".format(video_file, len(sequence)))
+            print(f"info vid has {total_frames} frames")
+            
+
+        
+
+        sequence_tensor = torch.stack(sequence)
+       
+
+        return sequence_tensor, name
+
+    def __len__(self):
+        return len(self.video_dirs)
+    
+
 
 class VideoARCFramesDataset(Dataset):
     def __init__(self, dataset_root, labels_file, transform=None, sequence_length=5):

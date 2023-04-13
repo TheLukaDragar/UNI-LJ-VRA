@@ -1,25 +1,28 @@
 
+print('start')
 import os
 from dataset_1 import FaceFramesDataset, FaceFramesPredictionDataset, RandomFaceFramesDataset
 from dataset_1 import FaceFramesDataset, build_transforms
+print('imported dataset_1')
 import torch
 import torch.nn as nn
+print('imported torch')
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping 
 from pytorch_lightning.callbacks import ModelCheckpoint
 import torchmetrics
+print('imported pytorch_lightning')
 #WandbLogger
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.callbacks import ModelCheckpoint
-
-
+print('imported pytorch_lightning callbacks')
 from timm import create_model
 from torch.utils.data import DataLoader
 import numpy as np
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-
+print('imported timm')
 from torch.utils.data import random_split
 import wandb
 
@@ -37,20 +40,20 @@ def train_val_test_split(dataset, train_prop=0.7, val_prop=0.2, test_prop=0.1):
 
 
 class ConvNeXt(pl.LightningModule):
-    def __init__(self, model_name='convnext_tiny', dropout=0.1):
+    def __init__(self, model_name='eva_large_patch14_336.in22k_ft_in22k_in1k', dropout=0.1):
         super(ConvNeXt, self).__init__()
         self.model_name = model_name
         self.backbone = create_model(self.model_name, pretrained=True, num_classes = 2)
         #load from checkpoint
         #self.backbone.load_state_dict(torch.load('/d/hpc/projects/FRI/ldragar/convnext_xlarge_384_in22ft1k_10.pth'))
     
-        n_features = self.backbone.head.fc.in_features
+        n_features = self.backbone.head.in_features
         self.backbone.head.fc = nn.Linear(n_features, 2)
-        self.backbone = torch.nn.DataParallel(self.backbone)
-        self.backbone.load_state_dict(torch.load('/d/hpc/projects/FRI/ldragar/convnext_xlarge_384_in22ft1k_30.pth'))
+        #self.backbone = torch.nn.DataParallel(self.backbone)
+        #self.backbone.load_state_dict(torch.load('/d/hpc/projects/FRI/ldragar/convnext_xlarge_384_in22ft1k_30.pth'))
         
         #ADDED THIS
-        self.backbone = self.backbone.module
+        #self.backbone = self.backbone.module
         
 
 
@@ -91,7 +94,7 @@ class ConvNeXt(pl.LightningModule):
         x, y = batch
         preds = self(x)
         loss = self.RMSE(preds, y)
-        self.log('train_loss', loss.item(), on_epoch=True, prog_bar=True)
+        self.log('train_loss', loss.item(), on_epoch=True, prog_bar=True,sync_dist=True)
         
         return loss
     
@@ -99,7 +102,7 @@ class ConvNeXt(pl.LightningModule):
         x, y = batch
         preds = self(x)
         loss = self.RMSE(preds, y)
-        self.log('val_loss', loss.item(), on_epoch=True, prog_bar=True)
+        self.log('val_loss', loss.item(), on_epoch=True, prog_bar=True,sync_dist=True)
         
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=2e-5)
@@ -126,9 +129,9 @@ class ConvNeXt(pl.LightningModule):
         rmse = torch.sqrt(mse_log)
 
         
-        self.log('test_plcc', plcc)
-        self.log('test_spearman', spearman)
-        self.log('test_rmse', rmse)
+        self.log('test_plcc', plcc,sync_dist=True)
+        self.log('test_spearman', spearman,sync_dist=True)
+        self.log('test_rmse', rmse,sync_dist=True)
 
 
         
@@ -145,7 +148,7 @@ if __name__ == '__main__':
 
 
 
-    transform_train, transform_test = build_transforms(384, 384, 
+    transform_train, transform_test = build_transforms(336, 336, 
                             max_pixel_value=255.0, norm_mean=[0.485, 0.456, 0.406], norm_std=[0.229, 0.224, 0.225])
 
     print("loading dataset")
@@ -158,7 +161,7 @@ if __name__ == '__main__':
     else:
         face_frames_dataset = FaceFramesDataset(dataset_root, labels_file, transform=transform_train)
 
-    train_ds, val_ds, test_ds = train_val_test_split(face_frames_dataset,train_prop=0.5, val_prop=0.25, test_prop=0.25)
+    train_ds, val_ds, test_ds = train_val_test_split(face_frames_dataset)
 
     train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=4)
     val_dl = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=4)
@@ -174,11 +177,11 @@ if __name__ == '__main__':
         print(y)
         break
 
-    wandb_logger = WandbLogger(project='luka_borut', name='convnext_xlarge_384_in22ft1k', save_dir='/d/hpc/projects/FRI/ldragar/wandb/')
+    wandb_logger = WandbLogger(project='luka_borut', name='eva_large_patch14_336.in22k_ft_in22k_in1k', save_dir='/d/hpc/projects/FRI/ldragar/wandb/')
 
 
     #convnext_xlarge_384_in22ft1k
-    model=ConvNeXt(model_name='convnext_xlarge_384_in22ft1k', dropout=0.1)
+    model=ConvNeXt(model_name='eva_large_patch14_336.in22k_ft_in22k_in1k', dropout=0.1)
 
 
     #log
@@ -199,7 +202,9 @@ if __name__ == '__main__':
                                         filename=f'{wandb_run_id}-{{epoch:02d}}-{{val_loss:.2f}}', mode='min', save_top_k=1)
 
 
-    trainer = pl.Trainer(accelerator='gpu', 
+    trainer = pl.Trainer(accelerator='gpu',strategy='ddp_find_unused_parameters_true',
+                         devices=[0,1],
+                         num_nodes=1,
                         max_epochs=100, 
                         log_every_n_steps=200,
                         callbacks=[
