@@ -158,7 +158,7 @@ if __name__ == '__main__':
     else:
         face_frames_dataset = FaceFramesDataset(dataset_root, labels_file, transform=transform_train)
 
-    train_ds, val_ds, test_ds = train_val_test_split(face_frames_dataset,train_prop=0.5, val_prop=0.25, test_prop=0.25)
+    train_ds, val_ds, test_ds = train_val_test_split(face_frames_dataset)
 
     train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=4)
     val_dl = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=4)

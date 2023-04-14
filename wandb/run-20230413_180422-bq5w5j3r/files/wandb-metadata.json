@@ -1,0 +1,169 @@
+{
+    "os": "Linux-5.15.82-1.el8.sling.x86_64-x86_64-with-glibc2.28",
+    "python": "3.10.10",
+    "heartbeatAt": "2023-04-13T16:04:23.287127",
+    "startedAt": "2023-04-13T16:04:22.531224",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/d/hpc/home/ld8435/train_convnext_Sequecing.py",
+    "codePath": "train_convnext_Sequecing.py",
+    "git": {
+        "remote": "https://github.com/TheLukaDragar/ld8435.git",
+        "commit": "473fd5c4883d61a21644ef1b1797070de6276ed4"
+    },
+    "email": "luka.dragarbusiness@gmail.com",
+    "root": "/d/hpc/home/ld8435",
+    "host": "wn206.arnes.si",
+    "username": "ld8435",
+    "executable": "/d/hpc/home/ld8435/miniconda3/envs/pytorch_env/bin/python",
+    "cpu_count": 12,
+    "cpu_count_logical": 24,
+    "cpu_freq": {
+        "current": 2424.942166666667,
+        "min": 1500.0,
+        "max": 2900.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 1767.835,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1797.959,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 3034.206,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1656.078,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1596.358,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 3191.917,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2914.69,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1657.866,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1660.999,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1596.465,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 3190.315,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1500.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2900.0,
+            "min": 1500.0,
+            "max": 2900.0
+        }
+    ],
+    "disk": {
+        "total": 882.7640647888184,
+        "used": 76.73545455932617
+    },
+    "gpu": "Tesla V100S-PCIE-32GB",
+    "gpu_count": 2,
+    "gpu_devices": [
+        {
+            "name": "Tesla V100S-PCIE-32GB",
+            "memory_total": 34359738368
+        },
+        {
+            "name": "Tesla V100S-PCIE-32GB",
+            "memory_total": 34359738368
+        }
+    ],
+    "memory": {
+        "total": 125.66726303100586
+    }
+}

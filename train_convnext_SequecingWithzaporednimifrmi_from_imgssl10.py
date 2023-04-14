@@ -3,7 +3,7 @@ print('hello')
 import os
 import warnings
 print("importing modules")
-from dataset_1 import  VideoFramesDataset, VideoFramesPredictionDataset
+from dataset_1 import  FaceFramesSeqPredictionDataset, RandomSeqFaceFramesDataset
 from dataset_1 import  build_transforms
 print('imported dataset_1')
 import torch
@@ -85,7 +85,7 @@ class ConvNeXt(pl.LightningModule):
 
         #ddp debug 
         
-        #self.seen_samples = set()
+        self.seen_samples = set()
 
 
 
@@ -148,14 +148,15 @@ class ConvNeXt(pl.LightningModule):
     
     def test_step(self, batch, batch_idx):
         x, y = batch
-        # Check for duplicates THIS IS FOR DDP DEBUGGING
-        # for sample in x:
-        #     sample_hash = hash(sample.cpu().numpy().tostring())
-        #     if sample_hash in self.seen_samples:
-        #         print("Duplicate sample detected:", sample)
-        #     else:
-        #         print("New sample detected:", str(sample_hash),str(batch_idx),str(sample.cpu().numpy().tostring()))
-        #         self.seen_samples.add(sample_hash)
+        #Check for duplicates THIS IS FOR DDP DEBUGGING
+        for sample in x:
+            sample_hash = hash(sample.cpu().numpy().tostring())
+            if sample_hash in self.seen_samples:
+                print("Duplicate sample detected:", sample)
+                warnings.warn("Duplicate sample detected!!! ")
+            else:
+                print("New sample detected:", str(sample_hash),str(batch_idx))
+                self.seen_samples.add(sample_hash)
         preds = self(x)
         self.test_preds.append(preds)
         self.test_labels.append(y)
@@ -185,10 +186,13 @@ if __name__ == '__main__':
 
     print("starting")
 
-    dataset_root = '/d/hpc/projects/FRI/ldragar/original_dataset'
+    dataset_root = '/d/hpc/projects/FRI/ldragar/dataset'
     labels_file = '/d/hpc/projects/FRI/ldragar/label/train_set.csv'
-    batch_size = 2
-    seq_len = 5
+    batch_size = 1
+    seq_len = 10
+
+
+
 
 
     transform_train, transform_test = build_transforms(384, 384, 
@@ -200,7 +204,7 @@ if __name__ == '__main__':
 
    
 
-    face_frames_dataset =VideoFramesDataset(dataset_root, labels_file,transform=transform_train,sequence_length=seq_len)
+    face_frames_dataset =RandomSeqFaceFramesDataset(dataset_root, labels_file,transform=transform_train,seq_len=seq_len)
     
     print("splitting dataset")
     train_ds, val_ds, test_ds = train_val_test_split(face_frames_dataset)
@@ -226,7 +230,7 @@ if __name__ == '__main__':
         break
     
 
-    wandb_logger = WandbLogger(project='luka_borut', name='25Seqencedconvnext_xlarge_384_in22ft1k', save_dir='/d/hpc/projects/FRI/ldragar/wandb/')
+    wandb_logger = WandbLogger(project='luka_borut', name='FTIMESeqencedconvnext_xlarge_384_in22ft1k', save_dir='/d/hpc/projects/FRI/ldragar/wandb/')
     
 
     #convnext_xlarge_384_in22ft1k
@@ -258,18 +262,18 @@ if __name__ == '__main__':
     trainer = pl.Trainer(accelerator='gpu', strategy='ddp',
                         num_nodes=1,
                         devices=[0,1],
-                        max_epochs=25, #SHOULD BE enough
+                        max_epochs=50, #SHOULD BE enough
                         log_every_n_steps=200,
                         callbacks=[
                             EarlyStopping(monitor="val_loss", 
                                         mode="min",
-                                        patience=5,
+                                        patience=4,
                                         ),
                                 checkpoint_callback
          
                             ]
                             ,logger=wandb_logger,
-                            accumulate_grad_batches=4,
+                            accumulate_grad_batches=8,
 
                         )
 
@@ -313,7 +317,9 @@ if __name__ == '__main__':
             test_labels = []
             test_names = []
 
-            ds = VideoFramesPredictionDataset(labels_file=os.path.join(test_labels_dir, name), dataset_root=dataset_root,transform=transform_test)
+            #use seq len 
+
+            ds = FaceFramesSeqPredictionDataset(labels_file=os.path.join(test_labels_dir, name), dataset_root=dataset_root,transform=transform_test,seq_len=seq_len)
             print(f"loaded {len(ds)} test examples")
 
             with torch.no_grad():
