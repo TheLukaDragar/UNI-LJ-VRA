@@ -2,6 +2,8 @@
 print('hello')
 import os
 import warnings
+
+import numpy as np
 print("importing modules")
 from dataset_1 import  FaceFramesSeqPredictionDataset, RandomSeqFaceFramesDataset
 from dataset_1 import  build_transforms
@@ -188,8 +190,8 @@ if __name__ == '__main__':
 
     dataset_root = '/d/hpc/projects/FRI/ldragar/dataset'
     labels_file = '/d/hpc/projects/FRI/ldragar/label/train_set.csv'
-    batch_size = 1
-    seq_len = 10
+    batch_size = 2
+    seq_len = 5
 
 
 
@@ -198,175 +200,128 @@ if __name__ == '__main__':
     transform_train, transform_test = build_transforms(384, 384, 
                             max_pixel_value=255.0, norm_mean=[0.485, 0.456, 0.406], norm_std=[0.229, 0.224, 0.225])
 
-    print("loading dataset")
-
 
 
    
 
-    face_frames_dataset =RandomSeqFaceFramesDataset(dataset_root, labels_file,transform=transform_train,seq_len=seq_len)
     
-    print("splitting dataset")
-    train_ds, val_ds, test_ds = train_val_test_split(face_frames_dataset)
-
     print("loading dataloader")
 
-    train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=4)
-    val_dl = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=4)
-    test_dl = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=4)
-    
-    if len(test_dl) % batch_size != 0:
-        warnings.warn("Uneven inputs detected! With multi-device settings, DistributedSampler may replicate some samples to ensure all devices have the same batch size. TEST WILL NOT BE ACCURATE CRITICAL!")
-        exit(1)
+  
 
-    print(f"loaded {len(train_dl)} train batches and {len(val_dl)} val batches and {len(test_dl)} test batches  of size {train_dl.batch_size}")
 
     #print first train example
 
-    for x,y in train_dl:
-        print(x.shape)
-        print(y.shape)
-        print(y)
-        break
     
 
-    wandb_logger = WandbLogger(project='luka_borut', name='FTIMESeqencedconvnext_xlarge_384_in22ft1k', save_dir='/d/hpc/projects/FRI/ldragar/wandb/')
     
 
     #convnext_xlarge_384_in22ft1k
     model=ConvNeXt(model_name='convnext_xlarge_384_in22ft1k', dropout=0.1)
 
 
-    #log
-    #API KEY 242d18971b1b7df61cceaa43724c3b1e6c17c49c
-    wandb_logger.watch(model, log='all', log_freq=100)
-    #log batch size
-    wandb_logger.log_hyperparams({'batch_size': batch_size})
-    #random face frames
-    wandb_logger.log_hyperparams({'seq_len': seq_len})
+
+    wandb_run_id = 'y23waiez' #first fema very good
+    checkpoint_root = '/d/hpc/projects/FRI/ldragar/models'
+    seq_len = 5 #important for the model
+    x_predictions = 10 #how many predictions to average
+
+    res_name="dotren_conv"+wandb_run_id+"_final_modl_"+str(x_predictions)+"_avgpreds"
 
 
-    wandb_run_id = str(wandb_logger.version)
-    if wandb_run_id == 'None':
-        print("no wandb run id this is a copy of model with DDP")
 
-    print("init trainer")
-
-    #save hyperparameters
-    wandb_logger.log_hyperparams(model.hparams)
-    checkpoint_callback = ModelCheckpoint(monitor='val_loss', 
-                                        dirpath='/d/hpc/projects/FRI/ldragar/checkpoints/', 
-                                        filename=f'{wandb_run_id}-{{epoch:02d}}-{{val_loss:.2f}}', mode='min', save_top_k=1)
-
-
-    trainer = pl.Trainer(accelerator='gpu', strategy='ddp',
-                        num_nodes=1,
-                        devices=[0,1],
-                        max_epochs=50, #SHOULD BE enough
-                        log_every_n_steps=200,
-                        callbacks=[
-                            EarlyStopping(monitor="val_loss", 
-                                        mode="min",
-                                        patience=4,
-                                        ),
-                                checkpoint_callback
-         
-                            ]
-                            ,logger=wandb_logger,
-                            accumulate_grad_batches=8,
-
-                        )
-
-    print("start training")
-    # Train the model
-    trainer.fit(model, train_dl, val_dl)
-    # Test the model
-    print("testing current model")
-    trainer.test(model, test_dl)
-    
-   
-
-    if trainer.global_rank == 0:
-
-        #save model
-        model_path = os.path.join('/d/hpc/projects/FRI/ldragar/models/', wandb_run_id)
-        if not os.path.exists(model_path):
-            os.makedirs(model_path)
-        torch.save(model.state_dict(), os.path.join(model_path, f'{wandb_run_id}.pt'))
-
-
-        #PREDICTIONS
-        model.eval()  # set the model to evaluation mode
-
-        model = model.to('cuda:0')
-
-        test_labels_dir = '/d/hpc/projects/FRI/ldragar/label/'
-        stages = ['1','2','3']
-        #get wandb run id
+    #load checkpoint
+    #get files in dir
+    files = os.listdir(checkpoint_root)
+    #get the one with the same run id
+    cp_name = [f for f in files if wandb_run_id in f][0]
+    print(cp_name)
+    if not cp_name.endswith('.ckpt'):
+        #this is a pt file 
+        cp_name = os.path.join(checkpoint_root, cp_name,cp_name+'.pt')
     
 
-        
+    #load checkpoint
+    if cp_name.endswith('.ckpt'):
 
-        resultsdir = os.path.join('/d/hpc/projects/FRI/ldragar/results/', wandb_run_id)
-        if not os.path.exists(resultsdir):
-            os.makedirs(resultsdir)
-
-
-        for stage in stages:
-            name='test_set'+stage+'.txt'
-            test_labels = []
-            test_names = []
-
-            #use seq len 
-
-            ds = FaceFramesSeqPredictionDataset(labels_file=os.path.join(test_labels_dir, name), dataset_root=dataset_root,transform=transform_test,seq_len=seq_len)
-            print(f"loaded {len(ds)} test examples")
-
-            with torch.no_grad():
-                for x,nameee in ds:
-                    x = x.unsqueeze(0).to(model.device)
-                    y = model(x)
-                    y = y.cpu().numpy()
-                    y =y[0][0]
-                    
-                    test_labels.append(y)
-                    test_names.append(nameee)
-
-            print(f"predicted {len(test_labels)} labels for {name}")
-            print(f'len test_names {len(test_names)}')
-            print(f'len test_labels {len(test_labels)}')
-
-
-
-
-
-            #save to file with  Test1_preds.txt, Test2_preds.txt, Test3_preds.txt
-            #name, label
-            with open(os.path.join(resultsdir, 'Test'+stage+'_preds.txt'), 'w') as f:
-                for i in range(len(test_names)):
-                    f.write(f"{test_names[i]},{test_labels[i]}\n")
-                
-            print(f"saved {len(test_labels)} predictions to {os.path.join(resultsdir, 'Test'+stage+'_preds.txt')}")
-
-        print("done")
-            
+        #load checkpoint
+        checkpoint = torch.load(os.path.join(checkpoint_root, cp_name))
+        model.load_state_dict(checkpoint['state_dict'])
 
     else:
-        print("not rank 0 skipping predictions")
+        #load pt file
+        model.load_state_dict(torch.load(cp_name))
 
-            
-
-        
-
-        
-
-    # test_labels = np.concatenate(test_labels)
-    # print(test_labels.shape)
-
-    # #SAVE PREDICTIONS as txt file
-    # np.savetxt('test_labels.txt', test_labels, delimiter=',')
+    
+    
 
 
 
+    #PREDICTIONS
+    model.eval()  # set the model to evaluation mode
 
+    model = model.to('cuda:0')
+
+    test_labels_dir = '/d/hpc/projects/FRI/ldragar/label/'
+    stages = ['1','2','3']
+    #get wandb run id
+
+
+    resultsdir = os.path.join('./resFinalt', res_name)
+    if not os.path.exists(resultsdir):
+        os.makedirs(resultsdir)
+
+
+for stage in stages:
+    name='test_set'+stage+'.txt'
+
+    # Initialize lists to store the predictions and the test names
+    all_test_labels = []
+    all_test_names = []
+
+    # Make x_predictions for each stage
+    for i in range(x_predictions):
+        test_labels = []
+        test_names = []
+
+        ds = FaceFramesSeqPredictionDataset(os.path.join(test_labels_dir, name), dataset_root, transform=transform_test, seq_len=seq_len)
+        print(f"loaded {len(ds)} test examples")
+
+        with torch.no_grad():
+            for x, nameee in ds:
+                x = x.unsqueeze(0).to(model.device)
+                y = model(x)
+                y = y.cpu().numpy()
+                y = y[0][0]
+
+                test_labels.append(y)
+                test_names.append(nameee)
+
+        print(f"predicted {len(test_labels)} labels for {name}")
+
+        all_test_labels.append(test_labels)
+        all_test_names.append(test_names)
+
+    # Calculate the mean and standard deviation of the predictions
+    all_test_labels = np.array(all_test_labels)
+    mean_test_labels = np.mean(all_test_labels, axis=0)
+    std_test_labels = np.std(all_test_labels, axis=0)
+
+    # Calculate the RMSE between each pair of predictions
+    rmse_list = []
+    for i in range(x_predictions):
+        for j in range(i+1, x_predictions):
+            rmse = np.sqrt(np.mean((all_test_labels[i] - all_test_labels[j])**2))
+            rmse_list.append(rmse)
+
+    print(f"RMSE between predictions: {rmse_list}")
+
+    # Save the mean predictions to a file
+    with open(os.path.join(resultsdir, 'Test'+stage+'_preds.txt'), 'w') as f:
+        for i in range(len(all_test_names[0])):
+            f.write(f"{all_test_names[0][i]},{mean_test_labels[i]}\n")
+
+    print(f"saved {len(mean_test_labels)} predictions to {os.path.join(resultsdir, 'Test'+stage+'_preds.txt')}")
+
+print("done")
 
