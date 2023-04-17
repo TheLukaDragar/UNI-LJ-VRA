@@ -3,7 +3,7 @@ print('hello')
 import os
 import warnings
 print("importing modules")
-from dataset_tool import   RandomSeqFaceFramesDataset
+from dataset_tool import   RandomSeqFaceFramesDataset,FaceFramesSeqPredictionDataset
 from dataset_tool import  build_transforms
 print('imported dataset_1')
 import torch
@@ -33,9 +33,6 @@ import wandb
 import random
 import numpy as np
 from lightning.pytorch import seed_everything
-import random
-import numpy as np
-from lightning.pytorch import seed_everything
 
 
 def train_val_test_split(dataset, train_prop=0.7, val_prop=0.2, test_prop=0.1):
@@ -52,7 +49,7 @@ def train_val_test_split(dataset, train_prop=0.7, val_prop=0.2, test_prop=0.1):
 
 
 class ConvNeXt(pl.LightningModule):
-    def __init__(self,og_path, model_name='convnext_tiny', dropout=0.1):
+    def __init__(self, model_name='convnext_tiny', dropout=0.1):
         super(ConvNeXt, self).__init__()
         self.model_name = model_name
         self.backbone = create_model(self.model_name, pretrained=True, num_classes = 2)
@@ -62,7 +59,7 @@ class ConvNeXt(pl.LightningModule):
         n_features = self.backbone.head.fc.in_features
         self.backbone.head.fc = nn.Linear(n_features, 2)
         self.backbone = torch.nn.DataParallel(self.backbone)
-        self.backbone.load_state_dict(torch.load(og_path))
+        #self.backbone.load_state_dict(torch.load(og_path))
         
         self.backbone = self.backbone.module
         self.backbone.head.fc = nn.Identity()
@@ -183,38 +180,34 @@ class ConvNeXt(pl.LightningModule):
     
 
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Train the model with the given parameters.")
 
     parser.add_argument('--dataset_root', default='/d/hpc/projects/FRI/ldragar/dataset', help='Path to the dataset')
-    parser.add_argument('--labels_file', default='./label/train_set.csv', help='Path to the labels train file.')
-    parser.add_argument('--og_checkpoint', default='./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth', help='DFGC1st convnext_xlarge_384_in22ft1k_30.pth file path')
-    parser.add_argument('--labels_file', default='./label/train_set.csv', help='Path to the labels train file.')
-    parser.add_argument('--og_checkpoint', default='./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth', help='DFGC1st convnext_xlarge_384_in22ft1k_30.pth file path')
+    parser.add_argument('--labels_dir', default='./label/', help='Path to the labels directory.')
     #parser.add_argument('--cp_save_dir', default='/d/hpc/projects/FRI/ldragar/checkpoints/', help='Path to save checkpoints.')
-    parser.add_argument('--final_model_save_dir', default='./convnext_models/', help='Path to save the final model.')
-    parser.add_argument('--final_model_save_dir', default='./convnext_models/', help='Path to save the final model.')
+    parser.add_argument('--model_dir', default='./convnext_models/', help='Path to save the final model.')
     parser.add_argument('--batch_size', type=int, default=2, help='Batch size.')
     parser.add_argument('--seq_len', type=int, default=5, help='Sequence length.')
-    parser.add_argument('--seed', type=int, default=43, help='Random seed. for reproducibility.')
-    parser.add_argument('--wdb_project_name', default='luka_borut', help='Weights and Biases project name.')
-
+    parser.add_argument('--seed', type=int, default=42, help='Random seed. for reproducibility.')
+    parser.add_argument('--cp_id', default='vj09esa5', help='id(wandb_id) of the checkpoint to load from the model_dir.')
+    parser.add_argument('--x_predictions', type=int, default=10, help='Number of predictions to make. then average them.')
+    parser.add_argument('--out_predictions_dir', default='./predictions/', help='Path to save the predictions.')
     #parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
 
     args = parser.parse_args()
 
     print("starting")
     dataset_root = args.dataset_root
-    labels_file = args.labels_file
-    og_path = args.og_checkpoint
-    final_model_save_dir = args.final_model_save_dir
+    labels_dir = args.labels_dir
+    model_dir = args.model_dir
     batch_size = args.batch_size
     seq_len = args.seq_len
     seed = args.seed
-    wdb_project_name = args.wdb_project_name
-    seed = args.seed
-    wdb_project_name = args.wdb_project_name
+    cp_id = args.cp_id
+    x_predictions = args.x_predictions
+    out_predictions_dir = args.out_predictions_dir
+
     #cp_save_dir = args.cp_save_dir
     #test_labels_dir = args.test_labels_dir
 
@@ -222,176 +215,106 @@ if __name__ == '__main__':
 
 
 
-
-
     transform_train, transform_test = build_transforms(384, 384, 
                             max_pixel_value=255.0, norm_mean=[0.485, 0.456, 0.406], norm_std=[0.229, 0.224, 0.225])
 
-    print("loading dataset")
-
-    face_frames_dataset =RandomSeqFaceFramesDataset(dataset_root, labels_file,transform=transform_train,seq_len=seq_len)
-    
-    print("splitting dataset")
-    train_ds, val_ds, test_ds = train_val_test_split(face_frames_dataset)
-
-    print("loading dataloader")
-
-    train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=4)
-    val_dl = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=4)
-    test_dl = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=4)
-    
-    if len(test_dl) % batch_size != 0:
-        warnings.warn("Uneven inputs detected! With multi-device settings, DistributedSampler may replicate some samples to ensure all devices have the same batch size. TEST WILL NOT BE ACCURATE CRITICAL!")
-        exit(1)
-
-    print(f"loaded {len(train_dl)} train batches and {len(val_dl)} val batches and {len(test_dl)} test batches  of size {train_dl.batch_size}")
-
-    #print first train example
-
-    for x,y in train_dl:
-        print(x.shape)
-        print(y.shape)
-        print(y)
-        break
-    
-
-    wandb_logger = WandbLogger(project=wdb_project_name, name='ConvNext_final')
-    wandb_logger = WandbLogger(project=wdb_project_name, name='ConvNext_final')
-    
+   
 
     #convnext_xlarge_384_in22ft1k
-    model=ConvNeXt(og_path,model_name='convnext_xlarge_384_in22ft1k', dropout=0.1)
+    model=ConvNeXt(model_name='convnext_xlarge_384_in22ft1k', dropout=0.1)
 
-   
-   
-    wandb_logger.watch(model, log='all', log_freq=100)
-    #log batch size
-    wandb_logger.log_hyperparams({'batch_size': batch_size})
-    #random face frames
-    wandb_logger.log_hyperparams({'seq_len': seq_len})
-    #log seed
-    wandb_logger.log_hyperparams({'seed': seed})
-
-    #log seed
-    wandb_logger.log_hyperparams({'seed': seed})
-
-
-
-    wandb_run_id = str(wandb_logger.version)
-    if wandb_run_id == 'None':
-        print("no wandb run id this is a copy of model with DDP")
-
-    print("init trainer")
-
-    #save hyperparameters
-    wandb_logger.log_hyperparams(model.hparams)
-
-    # checkpoint_callback = ModelCheckpoint(monitor='val_loss', 
-    #                                     dirpath=cp_save_dir, 
-    #                                     filename=f'{wandb_run_id}-{{epoch:02d}}-{{val_loss:.2f}}', mode='min', save_top_k=1)
-
-
-    trainer = pl.Trainer(accelerator='gpu', strategy='ddp',
-                        num_nodes=1,
-                        devices=[0,1],
-                        max_epochs=33, #SHOULD BE enough
-                        log_every_n_steps=200,
-                        callbacks=[
-                            # EarlyStopping(monitor="val_loss", 
-                            #             mode="min",
-                            #             patience=4,
-                            #             ),
-                                #checkpoint_callback
-         
-                            ]
-                            ,logger=wandb_logger,
-                            accumulate_grad_batches=8,
-                            deterministic=True,
-                            deterministic=True,
-
-                        )
-
-    print("start training")
-    # Train the model
-    trainer.fit(model, train_dl, val_dl)
-    # Test the model
-    print("testing current model")
-    trainer.test(model, test_dl)
+    #load checkpoint
+    #get files in dir
+    files = os.listdir(model_dir)
+    #get the one with the same run id
+    cp_name = [f for f in files if cp_id in f][0]
     
-   
-
-    if trainer.global_rank == 0:
-
-        #save model
-        model_path = os.path.join(final_model_save_dir, wandb_run_id)
-        if not os.path.exists(model_path):
-            os.makedirs(model_path)
-        torch.save(model.state_dict(), os.path.join(model_path, f'{wandb_run_id}.pt'))
-        print(f'finished training, saved model to {model_path}')
-        print(f'finished training, saved model to {model_path}')
-
-
-    #     #PREDICTIONS 
-    #     model.eval()  # set the model to evaluation mode
-
-    #     model = model.to('cuda:0')
-
-       
-    #     stages = ['1','2','3']
-    #     #get wandb run id
+    print(f"loading model from checkpoint {cp_name}")
+    if not cp_name.endswith('.ckpt'):
+        #this is a pt file 
+        cp_name = os.path.join(model_dir, cp_name,cp_name+'.pt')
     
 
-        
+    #load checkpoint
+    if cp_name.endswith('.ckpt'):
+        #load checkpoint
+        checkpoint = torch.load(os.path.join(model_dir, cp_name))
+        model.load_state_dict(checkpoint['state_dict'])
 
-    #     resultsdir = os.path.join('/d/hpc/projects/FRI/ldragar/results/', wandb_run_id)
-    #     if not os.path.exists(resultsdir):
-    #         os.makedirs(resultsdir)
-
-
-    #     for stage in stages:
-    #         name='test_set'+stage+'.txt'
-    #         test_labels = []
-    #         test_names = []
-
-    #         #use seq len 
-
-    #         ds = FaceFramesSeqPredictionDataset(os.path.join(test_labels_dir, name),dataset_root,transform=transform_test,seq_len=seq_len)
-    #         print(f"loaded {len(ds)} test examples")
-
-    #         with torch.no_grad():
-    #             for x,nameee in ds:
-    #                 x = x.unsqueeze(0).to(model.device)
-    #                 y = model(x)
-    #                 y = y.cpu().numpy()
-    #                 y =y[0][0]
-                    
-    #                 test_labels.append(y)
-    #                 test_names.append(nameee)
-
-    #         print(f"predicted {len(test_labels)} labels for {name}")
-    #         print(f'len test_names {len(test_names)}')
-    #         print(f'len test_labels {len(test_labels)}')
+    else:
+        #load pt file
+        model.load_state_dict(torch.load(cp_name))
+  
 
 
 
+    #PREDICTIONS
+    model.eval()  # set the model to evaluation mode
+
+    model = model.to('cuda:0')
+
+    stages = ['1','2','3']
+
+    resultsdir = os.path.join(out_predictions_dir, cp_id)
+    if not os.path.exists(resultsdir):
+        os.makedirs(resultsdir, exist_ok=True)
 
 
-    #         #save to file with  Test1_preds.txt, Test2_preds.txt, Test3_preds.txt
-    #         #name, label
-    #         with open(os.path.join(resultsdir, 'Test'+stage+'_preds.txt'), 'w') as f:
-    #             for i in range(len(test_names)):
-    #                 f.write(f"{test_names[i]},{test_labels[i]}\n")
-                
-    #         print(f"saved {len(test_labels)} predictions to {os.path.join(resultsdir, 'Test'+stage+'_preds.txt')}")
+    for stage in stages:
+        name='test_set'+stage+'.txt'
 
-    #     print("done")
-            
+        # Initialize lists to store the predictions and the test names
+        all_test_labels = []
+        all_test_names = []
 
-    # else:
-    #     print("not rank 0 skipping predictions")
+        # Make x_predictions for each stage
+        for i in range(x_predictions):
+            test_labels = []
+            test_names = []
 
-        
+            ds = FaceFramesSeqPredictionDataset(os.path.join(labels_dir, name), dataset_root, transform=transform_test, seq_len=seq_len)
+            print(f"loaded {len(ds)} test examples")
 
+            with torch.no_grad():
+                for x, nameee in ds:
+                    x = x.unsqueeze(0).to(model.device)
+                    y = model(x)
+                    y = y.cpu().numpy()
+                    y = y[0][0]
+
+                    test_labels.append(y)
+                    test_names.append(nameee)
+
+            print(f"predicted {len(test_labels)} labels for {name}")
+
+            all_test_labels.append(test_labels)
+            all_test_names.append(test_names)
+
+        # Calculate the mean and standard deviation of the predictions
+        all_test_labels = np.array(all_test_labels)
+        mean_test_labels = np.mean(all_test_labels, axis=0)
+        std_test_labels = np.std(all_test_labels, axis=0)
+
+        # Calculate the RMSE between each pair of predictions
+        rmse_list = []
+        for i in range(x_predictions):
+            for j in range(i+1, x_predictions):
+                rmse = np.sqrt(np.mean((all_test_labels[i] - all_test_labels[j])**2))
+                rmse_list.append(rmse)
+
+        print(f"RMSE between predictions: {rmse_list}")
+
+        # Save the mean predictions to a file
+        with open(os.path.join(resultsdir, 'Test'+stage+'_preds.txt'), 'w') as f:
+            for i in range(len(all_test_names[0])):
+                f.write(f"{all_test_names[0][i]},{mean_test_labels[i]}\n")
+
+        print(f"saved {len(mean_test_labels)} predictions to {os.path.join(resultsdir, 'Test'+stage+'_preds.txt')}")
+
+    print("done")
+
+
+    
 
 
 

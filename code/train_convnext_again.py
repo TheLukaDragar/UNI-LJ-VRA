@@ -33,9 +33,6 @@ import wandb
 import random
 import numpy as np
 from lightning.pytorch import seed_everything
-import random
-import numpy as np
-from lightning.pytorch import seed_everything
 
 
 def train_val_test_split(dataset, train_prop=0.7, val_prop=0.2, test_prop=0.1):
@@ -183,23 +180,19 @@ class ConvNeXt(pl.LightningModule):
     
 
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Train the model with the given parameters.")
 
     parser.add_argument('--dataset_root', default='/d/hpc/projects/FRI/ldragar/dataset', help='Path to the dataset')
     parser.add_argument('--labels_file', default='./label/train_set.csv', help='Path to the labels train file.')
     parser.add_argument('--og_checkpoint', default='./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth', help='DFGC1st convnext_xlarge_384_in22ft1k_30.pth file path')
-    parser.add_argument('--labels_file', default='./label/train_set.csv', help='Path to the labels train file.')
-    parser.add_argument('--og_checkpoint', default='./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth', help='DFGC1st convnext_xlarge_384_in22ft1k_30.pth file path')
     #parser.add_argument('--cp_save_dir', default='/d/hpc/projects/FRI/ldragar/checkpoints/', help='Path to save checkpoints.')
-    parser.add_argument('--final_model_save_dir', default='./convnext_models/', help='Path to save the final model.')
     parser.add_argument('--final_model_save_dir', default='./convnext_models/', help='Path to save the final model.')
     parser.add_argument('--batch_size', type=int, default=2, help='Batch size.')
     parser.add_argument('--seq_len', type=int, default=5, help='Sequence length.')
-    parser.add_argument('--seed', type=int, default=43, help='Random seed. for reproducibility.')
+    parser.add_argument('--seed', type=int, default=42, help='Random seed. for reproducibility.')
     parser.add_argument('--wdb_project_name', default='luka_borut', help='Weights and Biases project name.')
-
+    parser.add_argument('--cp_id', default='vj09esa5', help='id(wandb_id) of the checkpoint to load from the final_model_save_dir directory.')
     #parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
 
     args = parser.parse_args()
@@ -213,8 +206,9 @@ if __name__ == '__main__':
     seq_len = args.seq_len
     seed = args.seed
     wdb_project_name = args.wdb_project_name
-    seed = args.seed
-    wdb_project_name = args.wdb_project_name
+    cp_id = args.cp_id
+
+
     #cp_save_dir = args.cp_save_dir
     #test_labels_dir = args.test_labels_dir
 
@@ -256,22 +250,40 @@ if __name__ == '__main__':
     
 
     wandb_logger = WandbLogger(project=wdb_project_name, name='ConvNext_final')
-    wandb_logger = WandbLogger(project=wdb_project_name, name='ConvNext_final')
     
 
     #convnext_xlarge_384_in22ft1k
     model=ConvNeXt(og_path,model_name='convnext_xlarge_384_in22ft1k', dropout=0.1)
 
    
+
+    #load checkpoint
+    #get files in dir
+    files = os.listdir(final_model_save_dir)
+    #get the one with the same run id
+    cp_name = [f for f in files if cp_id in f][0]
+    
+    print(f"loading model from checkpoint {cp_name}")
+    if not cp_name.endswith('.ckpt'):
+        #this is a pt file 
+        cp_name = os.path.join(final_model_save_dir, cp_name,cp_name+'.pt')
+    
+
+    #load checkpoint
+    if cp_name.endswith('.ckpt'):
+        #load checkpoint
+        checkpoint = torch.load(os.path.join(final_model_save_dir, cp_name))
+        model.load_state_dict(checkpoint['state_dict'])
+
+    else:
+        #load pt file
+        model.load_state_dict(torch.load(cp_name))
    
     wandb_logger.watch(model, log='all', log_freq=100)
     #log batch size
     wandb_logger.log_hyperparams({'batch_size': batch_size})
     #random face frames
     wandb_logger.log_hyperparams({'seq_len': seq_len})
-    #log seed
-    wandb_logger.log_hyperparams({'seed': seed})
-
     #log seed
     wandb_logger.log_hyperparams({'seed': seed})
 
@@ -294,19 +306,18 @@ if __name__ == '__main__':
     trainer = pl.Trainer(accelerator='gpu', strategy='ddp',
                         num_nodes=1,
                         devices=[0,1],
-                        max_epochs=33, #SHOULD BE enough
+                        max_epochs=50, #SHOULD BE enough
                         log_every_n_steps=200,
                         callbacks=[
-                            # EarlyStopping(monitor="val_loss", 
-                            #             mode="min",
-                            #             patience=4,
-                            #             ),
+                            EarlyStopping(monitor="val_loss", 
+                                        mode="min",
+                                        patience=4,
+                                        ),
                                 #checkpoint_callback
          
                             ]
                             ,logger=wandb_logger,
                             accumulate_grad_batches=8,
-                            deterministic=True,
                             deterministic=True,
 
                         )
@@ -327,7 +338,6 @@ if __name__ == '__main__':
         if not os.path.exists(model_path):
             os.makedirs(model_path)
         torch.save(model.state_dict(), os.path.join(model_path, f'{wandb_run_id}.pt'))
-        print(f'finished training, saved model to {model_path}')
         print(f'finished training, saved model to {model_path}')
 
 
