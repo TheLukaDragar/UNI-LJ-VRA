@@ -3,8 +3,10 @@ print('hello')
 import os
 import warnings
 print("importing modules")
-from dataset_1 import  FaceFramesSeqPredictionDataset, RandomSeqFaceFramesDataset
-from dataset_1 import  build_transforms
+from dataset_tool import   RandomSeqFaceFramesDataset
+from dataset_tool import  build_transforms
+from dataset_tool import   RandomSeqFaceFramesDataset
+from dataset_tool import  build_transforms
 print('imported dataset_1')
 import torch
 import torch.nn as nn
@@ -30,6 +32,12 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import random_split
 import wandb
+import random
+import numpy as np
+from lightning.pytorch import seed_everything
+import random
+import numpy as np
+from lightning.pytorch import seed_everything
 
 
 def train_val_test_split(dataset, train_prop=0.7, val_prop=0.2, test_prop=0.1):
@@ -176,14 +184,19 @@ class ConvNeXt(pl.LightningModule):
         return torch.cat(self.test_preds).numpy()
     
 
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Train the model with the given parameters.")
 
     parser.add_argument('--dataset_root', default='/d/hpc/projects/FRI/ldragar/dataset', help='Path to the dataset')
-    parser.add_argument('--labels_file', default='/d/hpc/projects/FRI/ldragar/label/train_set.csv', help='Path to the labels train file.')
-    parser.add_argument('--og_checkpoint', default='/d/hpc/projects/FRI/ldragar/convnext_xlarge_384_in22ft1k_30.pth', help='DFGC1st convnext_xlarge_384_in22ft1k_30.pth file path')
+    parser.add_argument('--labels_file', default='./label/train_set.csv', help='Path to the labels train file.')
+    parser.add_argument('--og_checkpoint', default='./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth', help='DFGC1st convnext_xlarge_384_in22ft1k_30.pth file path')
+    parser.add_argument('--labels_file', default='./label/train_set.csv', help='Path to the labels train file.')
+    parser.add_argument('--og_checkpoint', default='./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth', help='DFGC1st convnext_xlarge_384_in22ft1k_30.pth file path')
     #parser.add_argument('--cp_save_dir', default='/d/hpc/projects/FRI/ldragar/checkpoints/', help='Path to save checkpoints.')
-    parser.add_argument('--final_model_save_dir', default='/d/hpc/projects/FRI/ldragar/models/', help='Path to save the final model.')
+    parser.add_argument('--final_model_save_dir', default='./convnext_models/', help='Path to save the final model.')
+    parser.add_argument('--final_model_save_dir', default='./convnext_models/', help='Path to save the final model.')
     parser.add_argument('--batch_size', type=int, default=2, help='Batch size.')
     parser.add_argument('--seq_len', type=int, default=5, help='Sequence length.')
     #parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
@@ -197,6 +210,10 @@ if __name__ == '__main__':
     final_model_save_dir = args.final_model_save_dir
     batch_size = args.batch_size
     seq_len = args.seq_len
+    seed = args.seed
+    wdb_project_name = args.wdb_project_name
+    seed = args.seed
+    wdb_project_name = args.wdb_project_name
     #cp_save_dir = args.cp_save_dir
     #test_labels_dir = args.test_labels_dir
 
@@ -235,18 +252,26 @@ if __name__ == '__main__':
         break
     
 
-    wandb_logger = WandbLogger(project='luka_borut', name='ConvNext_final', save_dir='/d/hpc/projects/FRI/ldragar/wandb/')
+    wandb_logger = WandbLogger(project=wdb_project_name, name='ConvNext_final')
+    wandb_logger = WandbLogger(project=wdb_project_name, name='ConvNext_final')
     
 
     #convnext_xlarge_384_in22ft1k
     model=ConvNeXt(og_path,model_name='convnext_xlarge_384_in22ft1k', dropout=0.1)
 
-    #API KEY 242d18971b1b7df61cceaa43724c3b1e6c17c49c
+   
+   
     wandb_logger.watch(model, log='all', log_freq=100)
     #log batch size
     wandb_logger.log_hyperparams({'batch_size': batch_size})
     #random face frames
     wandb_logger.log_hyperparams({'seq_len': seq_len})
+    #log seed
+    wandb_logger.log_hyperparams({'seed': seed})
+
+    #log seed
+    wandb_logger.log_hyperparams({'seed': seed})
+
 
 
     wandb_run_id = str(wandb_logger.version)
@@ -278,6 +303,8 @@ if __name__ == '__main__':
                             ]
                             ,logger=wandb_logger,
                             accumulate_grad_batches=8,
+                            deterministic=True,
+                            deterministic=True,
 
                         )
 
@@ -297,6 +324,8 @@ if __name__ == '__main__':
         if not os.path.exists(model_path):
             os.makedirs(model_path)
         torch.save(model.state_dict(), os.path.join(model_path, f'{wandb_run_id}.pt'))
+        print(f'finished training, saved model to {model_path}')
+        print(f'finished training, saved model to {model_path}')
 
 
     #     #PREDICTIONS 
