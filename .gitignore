@@ -19,6 +19,8 @@ code/luka_borut/*
 code/DFGC-1st-2022-model/*
 code/eva_models/*
 code/convnext_models/*
+code/dataset/*
+
 
 
 bin/
