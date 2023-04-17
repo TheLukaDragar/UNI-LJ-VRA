@@ -190,10 +190,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset_root', default='/d/hpc/projects/FRI/ldragar/dataset', help='Path to the dataset')
     parser.add_argument('--labels_file', default='./label/train_set.csv', help='Path to the labels train file.')
     parser.add_argument('--og_checkpoint', default='./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth', help='DFGC1st convnext_xlarge_384_in22ft1k_30.pth file path')
-    parser.add_argument('--labels_file', default='./label/train_set.csv', help='Path to the labels train file.')
-    parser.add_argument('--og_checkpoint', default='./DFGC-1st-2022-model/convnext_xlarge_384_in22ft1k_30.pth', help='DFGC1st convnext_xlarge_384_in22ft1k_30.pth file path')
     #parser.add_argument('--cp_save_dir', default='/d/hpc/projects/FRI/ldragar/checkpoints/', help='Path to save checkpoints.')
-    parser.add_argument('--final_model_save_dir', default='./convnext_models/', help='Path to save the final model.')
     parser.add_argument('--final_model_save_dir', default='./convnext_models/', help='Path to save the final model.')
     parser.add_argument('--batch_size', type=int, default=2, help='Batch size.')
     parser.add_argument('--seq_len', type=int, default=5, help='Sequence length.')
@@ -213,8 +210,7 @@ if __name__ == '__main__':
     seq_len = args.seq_len
     seed = args.seed
     wdb_project_name = args.wdb_project_name
-    seed = args.seed
-    wdb_project_name = args.wdb_project_name
+
     #cp_save_dir = args.cp_save_dir
     #test_labels_dir = args.test_labels_dir
 
@@ -256,7 +252,6 @@ if __name__ == '__main__':
     
 
     wandb_logger = WandbLogger(project=wdb_project_name, name='ConvNext_final')
-    wandb_logger = WandbLogger(project=wdb_project_name, name='ConvNext_final')
     
 
     #convnext_xlarge_384_in22ft1k
@@ -269,9 +264,6 @@ if __name__ == '__main__':
     wandb_logger.log_hyperparams({'batch_size': batch_size})
     #random face frames
     wandb_logger.log_hyperparams({'seq_len': seq_len})
-    #log seed
-    wandb_logger.log_hyperparams({'seed': seed})
-
     #log seed
     wandb_logger.log_hyperparams({'seed': seed})
 
@@ -307,7 +299,6 @@ if __name__ == '__main__':
                             ,logger=wandb_logger,
                             accumulate_grad_batches=8,
                             deterministic=True,
-                            deterministic=True,
 
                         )
 
@@ -327,7 +318,6 @@ if __name__ == '__main__':
         if not os.path.exists(model_path):
             os.makedirs(model_path)
         torch.save(model.state_dict(), os.path.join(model_path, f'{wandb_run_id}.pt'))
-        print(f'finished training, saved model to {model_path}')
         print(f'finished training, saved model to {model_path}')
 
 

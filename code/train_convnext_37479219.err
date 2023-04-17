@@ -1,0 +1,22 @@
+[rank: 0] Global seed set to 27929
+wandb: Currently logged in as: thelukadragar (luka_borut). Use `wandb login --relogin` to force relogin
+wandb: wandb version 0.14.2 is available!  To upgrade, please run:
+wandb:  $ pip install wandb --upgrade
+wandb: Tracking run with wandb version 0.14.1
+wandb: Run data is saved locally in ./wandb/run-20230417_233852-ae4lx099
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run ConvNext_final
+wandb: ⭐️ View project at https://wandb.ai/luka_borut/luka_borut
+wandb: 🚀 View run at https://wandb.ai/luka_borut/luka_borut/runs/ae4lx099
+/d/hpc/home/ld8435/miniconda3/envs/pytorch_env/lib/python3.10/site-packages/timm/models/_factory.py:93: UserWarning: Mapping deprecated model name convnext_xlarge_384_in22ft1k to current convnext_xlarge.fb_in22k_ft_in1k_384.
+  model = create_fn(
+/d/hpc/home/ld8435/miniconda3/envs/pytorch_env/lib/python3.10/site-packages/torchmetrics/utilities/prints.py:36: UserWarning: Metric `SpearmanCorrcoef` will save all targets and predictions in the buffer. For large datasets, this may lead to large memory footprint.
+  warnings.warn(*args, **kwargs)
+wandb: logging graph, to disable use `wandb.watch(log_graph=False)`
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+[rank: 0] Global seed set to 27929
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/2
+slurmstepd: error: *** JOB 37479219 ON wn210 CANCELLED AT 2023-04-17T23:46:24 ***
