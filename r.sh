@@ -1,0 +1,14 @@
+python train_convnext_SequecingWithzaporednimifrmi.py 
+python train_convnext_SequecingWithzaporednimifrmi.py 
+python train_convnext_SequecingWithzaporednimifrmi.py 
+python train_convnext_SequecingWithzaporednimifrmi.py 
+python train_convnext_SequecingWithzaporednimifrmi.py 
+python train_convnext_SequecingWithzaporednimifrmi.py 
+python train_convnext_SequecingWithzaporednimifrmi.py 
+python train_convnext_SequecingWithzaporednimifrmi.py 
+python train_convnext_SequecingWithzaporednimifrmi.py 
+python train_convnext_SequecingWithzaporednimifrmi.py 
+python train_convnext_SequecingWithzaporednimifrmi.py 
+
+
+
