@@ -190,7 +190,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=2, help='Batch size.')
     parser.add_argument('--seq_len', type=int, default=5, help='Sequence length.')
     parser.add_argument('--seed', type=int, default=42, help='Random seed. for reproducibility.')
-    parser.add_argument('--cp_id', default='vj09esa5', help='id(wandb_id) of the checkpoint to load from the model_dir.')
+    parser.add_argument('--cp_id', default='y23waiez', help='id(wandb_id) of the checkpoint to load from the model_dir.')
     parser.add_argument('--x_predictions', type=int, default=10, help='Number of predictions to make. then average them.')
     parser.add_argument('--out_predictions_dir', default='./predictions/', help='Path to save the predictions.')
     #parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')
@@ -255,10 +255,33 @@ if __name__ == '__main__':
 
     stages = ['1','2','3']
 
-    resultsdir = os.path.join(out_predictions_dir, cp_id)
+    resultsdir = os.path.join(out_predictions_dir, cp_id,str(seed))
     if not os.path.exists(resultsdir):
         os.makedirs(resultsdir, exist_ok=True)
-    
+
+    class Result():
+        def __init__(self, test1,test2,test3,name,fn1,fn2,fn3):
+            self.test1 = test1
+            self.test2 = test2
+            self.test3 = test3
+            self.name = name
+            self.fn1 = fn1
+            self.fn2 = fn2
+            self.fn3 = fn3
+            self.summary=None
+            self.weight=None
+
+        def set_summary(self,summary):
+            self.summary=summary
+
+        def set_weight(self,weight):
+            self.weight=weight
+
+
+    t1=[]
+    t2=[]
+    t3=[]
+        
 
     for stage in stages:
         name='test_set'+stage+'.txt'
@@ -309,9 +332,83 @@ if __name__ == '__main__':
             for i in range(len(all_test_names[0])):
                 f.write(f"{all_test_names[0][i]},{mean_test_labels[i]}\n")
 
+        if stage=='1':
+            t1=mean_test_labels
+        if stage=='2':
+            t2=mean_test_labels
+        if stage=='3':
+            t3=mean_test_labels
+
         print(f"saved {len(mean_test_labels)} predictions to {os.path.join(resultsdir, 'Test'+stage+'_preds.txt')}")
 
-    print("done")
+
+    #compute mae beetwen submitet result
+   
+
+    #read all files in the folder
+    submition="/d/hpc/home/ld8435/code/convnext_models/y23waiez/dotren_convy23waiez_final_modl_10_avgpreds/"
+    names=["Test1_preds.txt","Test2_preds.txt","Test3_preds.txt"]
+    results=[]
+    
+    test1=[
+    ]
+    test2=[]
+    test3=[]
+    fn1=[]
+    fn2=[]
+    fn3=[]
+    with open(os.path.join(submition,names[0])) as f1:
+        for line in f1:
+            #C1/3-1-2-submit-00000.mp4,2.9382266998291016
+            l=line.split(",")
+            fn1.append(l[0])
+            test1.append(float(l[1]))
+
+    with open(os.path.join(submition,names[1])) as f2:
+        for line in f2:
+            #C1/3-1-2-submit-00000.mp4,2.9382266998291016
+
+            l=line.split(",")
+            fn2.append(l[0])
+            test2.append(float(l[1]))
+
+    with open(os.path.join(submition,names[2])) as f3:
+        for line in f3:
+            #C1/3-1-2-submit-00000.mp4,2.9382266998291016
+
+            l=line.split(",")
+            fn3.append(l[0])
+            test3.append(float(l[1]))
+
+
+    submition=Result(test1,test2,test3,"dotren_convy23waiez_final_modl_10_avgpreds",fn1,fn2,fn3)
+    new_result=Result(t1,t2,t3,resultsdir,fn1,fn2,fn3)
+
+    from sklearn.metrics import mean_absolute_error
+    
+    #compute mae
+    mae1=mean_absolute_error(submition.test1,new_result.test1)
+    mae2=mean_absolute_error(submition.test2,new_result.test2)
+    mae3=mean_absolute_error(submition.test3,new_result.test3)
+    mae=(mae1+mae2+mae3)/3
+    print("mae1",mae1)
+    print("mae2",mae2)
+    print("mae3",mae3)
+    print("avg_mae",mae)
+    #save to resultsdir
+    with open(os.path.join(resultsdir, 'mae.txt'), 'w') as f:
+        f.write(f"mae1,{mae1}\n")
+        f.write(f"mae2,{mae2}\n")
+        f.write(f"mae3,{mae3}\n")
+        f.write(f"avg_mae,{mae}\n")
+        f.write(f"new_result,{new_result.name}\n")
+        f.write(f"seed,{seed}\n")
+        
+
+
+
+
+
 
 
     
