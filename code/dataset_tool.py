@@ -351,7 +351,7 @@ class VideoFramesDataset(Dataset):
         return len(self.video_files)
 
 class RandomSeqFaceFramesDataset(Dataset):
-    def __init__(self, dataset_root, labels_file, transform=None, seq_len=5):
+    def __init__(self, dataset_root, labels_file, transform=None, seq_len=5,seed=None):
         self.dataset_root = dataset_root
         self.transform = transform
         self.seq_len = seq_len

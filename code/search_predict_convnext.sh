@@ -16,7 +16,7 @@
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate pytorch_env
 
-seed=$RANDOM
+seed=-1
 out_predictions_dir='./predictions/'
 cp_id='y23waiez' 
 
