@@ -61,20 +61,34 @@ The model's structure is similar to the ConvNext model, with the difference that
 Both models use RMSE as the loss function and AdamW as the optimizer with a learning rate of 2e-5. They also use ReduceLROnPlateau as a learning rate scheduler with a factor of 0.1, patience of 2 and monitor of the validation loss.
 We used early stopping with a patience of 4 monitoring the validation loss.
 
-With the training done on HPC we used Pytorch Lightning to handle the training loop and logging. Models were trained on 2 Tesla V100S-32GB using `ddp` strategy.
+With the training done on HPC we used Pytorch Lightning to handle the training loop and logging. Models were trained on 2 Tesla V100S-32GB GPUs using `ddp` strategy.
 with the following hyperparameters:
 - batch_size: 2
 - dropout: 0.1
 - seq_len: 5
 - accumulate_grad_batches: 8
+- epochs: 33 (early stopping)
+
+We have trained a couple of models with the same parameters and used the best one for the final submission. The reason for this is that the training is not deterministic and the results vary from run to run. Using a deterministic training loop produces worse results. So we decided to use the best model from multiple runs. We employed this strategy for both models. 
+
+During training, we also used the `wandb` logger to log the training and validation losses and the learning rate. This allowed us to monitor the training process. Finally after the training is done we save the final model checkpoint. And also the best model checkpoint based on the validation loss.
+
+Best ConvNext model run details:
+https://api.wandb.ai/links/luka_borut/8c7z2qrm
+
+Best Eva model run details:
+https://api.wandb.ai/links/luka_borut/l8ski9eg
 
 
 
 
 
+Note: for the final submission we used the best model checkpoint from the training process. And simply trained it again with the same hyperparameters to cover the remaining data. After early stopping we saved the final model checkpoint to be used for the final predictions.
+<iframe src="https://wandb.ai/luka_borut/luka_borut/reports/Best-ConvNext-retrained--Vmlldzo0MTI5OTQz" style="border:none;height:1024px;width:100%">
 
 
 # Chapter 5: Validation and Evaluation
+
 
 # Chapter 6: Results and Analysis
 

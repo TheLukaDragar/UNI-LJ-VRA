@@ -199,7 +199,10 @@ if __name__ == '__main__':
     #cp_save_dir = args.cp_save_dir
     #test_labels_dir = args.test_labels_dir
 
-    seed_everything(seed, workers=True)
+    if seed != -1:
+        seed_everything(seed, workers=True)
+
+
 
 
 
@@ -281,7 +284,7 @@ if __name__ == '__main__':
                             ]
                             ,logger=wandb_logger,
                             accumulate_grad_batches=8,
-                            deterministic=True,
+                            deterministic=seed != -1,
 
                         )
 
