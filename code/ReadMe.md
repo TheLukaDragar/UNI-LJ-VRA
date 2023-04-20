@@ -84,7 +84,10 @@ https://api.wandb.ai/links/luka_borut/l8ski9eg
 
 
 Note: for the final submission we used the best model checkpoint from the training process. And simply trained it again with the same hyperparameters to cover the remaining data. After early stopping we saved the final model checkpoint to be used for the final predictions.
-<iframe src="https://wandb.ai/luka_borut/luka_borut/reports/Best-ConvNext-retrained--Vmlldzo0MTI5OTQz" style="border:none;height:1024px;width:100%">
+
+Final ConvNext model run details: https://api.wandb.ai/links/luka_borut/6ak9snqi
+
+Final Eva model run details: https://api.wandb.ai/links/luka_borut/f8pff5ux
 
 
 # Chapter 5: Validation and Evaluation
