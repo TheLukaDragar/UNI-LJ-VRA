@@ -19,4 +19,4 @@ conda activate pytorch_env
 seed=-1 #no seed better results
 export WANDB__SERVICE_WAIT=300
 #script is made to run on 1 node with 2 gpus
-srun --nodes=1 --exclusive --gpus=2 --ntasks-per-node=2 --time=0-10:00:00 -p gpu python train_convnext_again.py --seed $seed
+srun --nodes=1 --exclusive --gpus=2 --ntasks-per-node=2 --time=0-10:00:00 -p gpu python train_eva_again.py --seed $seed
