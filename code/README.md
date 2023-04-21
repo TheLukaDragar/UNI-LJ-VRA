@@ -125,7 +125,7 @@ First we made predictions on the test set using the ConvNext model. Then we made
 
 for each test set.
 
-Code in: 
+Code in: `predict_convnext.py`, `predict_eva.py`, `combine_predictions.py`
 
 The predictions of each model are an average of 10 predictions made on each of the test sets. Since the dataloader chooses random sequences of 5 frames from the videos. The predictions are averaged to reduce the variance of the predictions. We also logged the RMSE beetwen pairs of predictions to check for consistency. With the ConvNext model the average RMSE was 0.16.
 
