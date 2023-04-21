@@ -181,7 +181,7 @@ example: `python train_convnext_again.py --cp_id (wandb_id)`
 `37orwro0`- final Eva model checkpoint
 
 ##### 4. Make predictions
-Do predictions on the test sets using the following scripts:
+Make predictions on the test sets using the following scripts:
 `3_predict_convnext.sh`
 `3_predict_eva.sh`
 The results will be saved in the `predictions` directory in the form of `(wandb_id)/(seed)/TestX_preds.txt`
