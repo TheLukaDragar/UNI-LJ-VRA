@@ -123,15 +123,17 @@ Since the predictions are non deterministic its difficult to reproduce the exact
 
 - ConvNext mae = 0.033634803569506086,  using seed 32585
 - Eva mae = 0.04175368133045378 using seed 7327
-- Final difference (combined above predictions)
-    test1 mae: 0.03007248560587565
-    test2 mae: 0.025541501492261885
-    test3 mae: 0.02521169583002726
-    test1 corrcoef: 0.9976959864175539
-    test2 corrcoef: 0.9989781149798285
-    test3 corrcoef: 0.9988755923377973
+  
+  
+Final difference (combined above predictions)
 
-details in: `convnext_prediction_analysis.ipynb`, `eva_prediction_analysis.ipynb`,`prediction_diff.ipynb`
+| Test Set    | MAE | Correlation Coefficient | 
+| ----------- | ----------- | ----------- | 
+Test 1 | 0.03007248560587565 | 0.9976959864175539
+Test 2 | 0.025541501492261885 | 0.9989781149798285
+Test 3 | 0.02521169583002726 | 0.9988755923377973
+
+Code in: `convnext_prediction_analysis.ipynb`, `eva_prediction_analysis.ipynb`,`prediction_diff.ipynb`
 
 
 
