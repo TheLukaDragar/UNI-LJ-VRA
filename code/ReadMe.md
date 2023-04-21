@@ -1,5 +1,7 @@
 # Chapter 1: Introduction
 
+The goal of this project was to predict MOS of DeepFake videos from DFGC-2021 dataset. The code was developed in 15 days and lots of different approaches and architectures were tested. The following is a summary of our final solution.
+
 
 # Chapter 2: Preprocessing
 The preprocessing of the data is done in the `0_extract_faces.py` file. The preprocessing is done in the following steps:
@@ -12,8 +14,8 @@ Define the input and output directories for each dataset partition (C1, C2, C3).
 5. Save the cropped faces in the dataset directory, preserving the original partition structure.
 During preprocessing, the script processes each video in the original dataset, detects faces using the MTCNN model, crops the detected faces, and saves them in the specified output directory. This results in a new dataset containing only cropped face images, which will be used as input data for the deep learning model in the subsequent chapters. Note this step is done to speed up training of the model and can also be done on the fly during training. However, this will slow down the training process and will require more GPU memory. 
 
-# Chapter 3: Model Architecture and Design
-The final solution was made from the following models:
+# Chapter 3: Model Architecture
+The final solution was made from 2 models ConvNext and Eva.
 
 ## 3.1: ConvNext
 The main idea was to use an existing model for DeepFake detections from last years winners. And adapt it to predict MOS and take advantage of the temporal nature of videos.
