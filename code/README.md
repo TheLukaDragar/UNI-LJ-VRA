@@ -108,12 +108,12 @@ After training was done we used the best model checkpoint to make predictions on
  The results of the best models are as follows:
 
 
-| Model          | PLCC               | SRCC               | RMSE                |
-| -------------- | ------------------ | ------------------ | ------------------- |
-| Best ConvNext  | 0.9374769926071168 | 0.910971224308014  | 0.2704703211784363  |
-| Best Eva       | 0.9335209131240844 | 0.9147642850875854 | 0.2935817241668701  |
-| Final ConvNext | 0.9676593542099    | 0.9616091251373292 | 0.21462157368659973 |
-| Final Eva      | 0.9503572583198548 | 0.9621573686599731 | 0.22783146798610687 |
+| Model          | PLCC               | SRCC               | RMSE                | wandb_run_id |
+| -------------- | ------------------ | ------------------ | ------------------- | ------------ |
+| Best ConvNext  | 0.9374769926071168 | 0.910971224308014  | 0.2704703211784363  | vj09esa5     |
+| Best Eva       | 0.9335209131240844 | 0.9147642850875854 | 0.2935817241668701  | wrc2h54x     |
+| Final ConvNext | 0.9676593542099    | 0.9616091251373292 | 0.21462157368659973 | y23waiez     |
+| Final Eva      | 0.9503572583198548 | 0.9621573686599731 | 0.22783146798610687 | 37orwro0     |
 
 Note Final ConvNext and Final Eva are the models we used for the final submission. And are trained again from checkpoints of the best models. So their results are slightly better than the best models.
 
