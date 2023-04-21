@@ -4,14 +4,19 @@ The goal of this project was to predict MOS of DeepFake videos from DFGC dataset
 
 
 # Chapter 2: Preprocessing
-The preprocessing of the data is done in the `0_extract_faces.py` file. The preprocessing is done in the following steps:
+The preprocessing of the data is done in the `0_extract_faces.py` file. You can download it here: https://unilj-my.sharepoint.com/:u:/g/personal/borutb_fri1_uni-lj_si/EeTxtClKf3hHkmxuq097fLoBrIXFAPE0HBeoVWwIKmUswg?e=wdERaI 
+ and skip the preprocessing step 
+
+
+
+ The preprocessing is done in the following steps:
 
 1. Load the data from the original_dataset directory.
 Define the input and output directories for each dataset partition (C1, C2, C3).
-2. Activate the appropriate Python environment (e.g., pytorch_env) using Conda.
-3. Iterate through each partition and call the face extraction script (0_extract_faces.py).
-4. Extract faces from the videos using the MTCNN model and OpenCV, for each frame in the video. Also zoom in the face ba a factor of `1.3`.
-5. Save the cropped faces in the dataset directory, preserving the original partition structure.
+1. Activate the appropriate Python environment (e.g., pytorch_env) using Conda.
+2. Iterate through each partition and call the face extraction script (0_extract_faces.py).
+3. Extract faces from the videos using the MTCNN model and OpenCV, for each frame in the video. The face box is also resized and adjusted to include some context around the face based on a scale factor of `1.3`.
+4. Save the cropped faces in the dataset directory, preserving the original partition structure.
 During preprocessing, the script processes each video in the original dataset, detects faces using the MTCNN model, crops the detected faces, and saves them in the specified output directory. This results in a new dataset containing only cropped face images, which will be used as input data for the deep learning model in the subsequent chapters. Note this step is done to speed up training of the model and can also be done on the fly during training. However, this will slow down the training process and will require more GPU memory. 
 
 # Chapter 3: Model Architecture
