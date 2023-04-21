@@ -180,7 +180,7 @@ if __name__ == '__main__':
     parser.add_argument('--final_model_save_dir', default='./eva_models/', help='Path to save the final model.')
     parser.add_argument('--batch_size', type=int, default=2, help='Batch size.')
     parser.add_argument('--seq_len', type=int, default=5, help='Sequence length.')
-    parser.add_argument('--seed', type=int, default=42, help='Random seed. for reproducibility.')
+    parser.add_argument('--seed', type=int, default=-1, help='Random seed. for reproducibility.')
     parser.add_argument('--wdb_project_name', default='luka_borut', help='Weights and Biases project name.')
     parser.add_argument('--cp_id', default='wrc2h54x', help='id(wandb_id) of the checkpoint to load from the final_model_save_dir directory.')
 
@@ -201,7 +201,9 @@ if __name__ == '__main__':
     #cp_save_dir = args.cp_save_dir
     #test_labels_dir = args.test_labels_dir
 
-    seed_everything(seed, workers=True)
+    if not seed == -1:
+        seed_everything(seed, workers=True)
+
 
 
 
@@ -304,7 +306,7 @@ if __name__ == '__main__':
                             ]
                             ,logger=wandb_logger,
                             accumulate_grad_batches=8,
-                            deterministic=True,
+                            deterministic=seed != -1,
 
                         )
 

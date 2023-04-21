@@ -16,7 +16,7 @@
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate pytorch_env
 
-seed=-1
+seed=-1 #no seed better results
 
 export WANDB__SERVICE_WAIT=300
 #script is made to run on 1 node with 2 gpus

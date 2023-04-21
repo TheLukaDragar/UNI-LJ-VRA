@@ -180,7 +180,7 @@ if __name__ == '__main__':
     parser.add_argument('--final_model_save_dir', default='./eva_models/', help='Path to save the final model.')
     parser.add_argument('--batch_size', type=int, default=2, help='Batch size.')
     parser.add_argument('--seq_len', type=int, default=5, help='Sequence length.')
-    parser.add_argument('--seed', type=int, default=43, help='Random seed. for reproducibility.')
+    parser.add_argument('--seed', type=int, default=43, help='Random seed. for reproducibility. Note final model is worse with the seed set.')
     parser.add_argument('--wdb_project_name', default='luka_borut', help='Weights and Biases project name.')
 
     #parser.add_argument('--test_labels_dir', default='/d/hpc/projects/FRI/ldragar/label/', help='Path to the test labels directory.')

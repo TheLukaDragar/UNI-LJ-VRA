@@ -182,7 +182,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_dir', default='./eva_models/', help='Path to save the final model.')
     parser.add_argument('--batch_size', type=int, default=2, help='Batch size.')
     parser.add_argument('--seq_len', type=int, default=5, help='Sequence length.')
-    parser.add_argument('--seed', type=int, default=42, help='Random seed. for reproducibility. -1 for no seed.')
+    parser.add_argument('--seed', type=int, default=-1, help='Random seed. for reproducibility. -1 for no seed.')
     parser.add_argument('--cp_id', default='37orwro0', help='id(wandb_id) of the checkpoint to load from the model_dir.')
     parser.add_argument('--x_predictions', type=int, default=10, help='Number of predictions to make. then average them.')
     parser.add_argument('--out_predictions_dir', default='./predictions/', help='Path to save the predictions.')
