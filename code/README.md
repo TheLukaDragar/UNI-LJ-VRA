@@ -27,7 +27,7 @@ The main idea was to use an existing model for DeepFake detections from last yea
 
 
 ### 3.1.1: Data
-`RandomSeqFaceFramesDataset`from `dataset_tool.py` processes each video in the dataset by randomly selecting a sequence of frames with a specified length(`seq_len=5`). The chosen sequence originates from a random starting point within the video. Each frame is then transformed according to the specified transforms for the model. Finally it returns these seqences with the coresponding MOS labels.
+`RandomSeqFaceFramesDataset`from `dataset_tool.py` processes each video in the dataset from `labels/train_set.csv`by randomly selecting a sequence of frames with a specified length(`seq_len=5`). The chosen sequence originates from a random starting point within the video. Each frame is then transformed according to the specified transforms for the model. Finally it returns these seqences with the coresponding MOS labels.
 
 The dataset is then randomly split into train, validation and test sets.
 - Train: 70%
@@ -104,7 +104,8 @@ Code in:
 
 
 # Chapter 5: Validation and Evaluation
-After training was done we used the best model checkpoint to make predictions on the test set. The results of are best models are as follows:
+After training was done we used the best model checkpoint to make predictions on the test set (from the train-validation-test split of the dataset). These predictions are used to compare different models.
+ The results of the best models are as follows:
 
 
 | Model          | PLCC               | SRCC               | RMSE                |
@@ -114,8 +115,10 @@ After training was done we used the best model checkpoint to make predictions on
 | Final ConvNext | 0.9676593542099    | 0.9616091251373292 | 0.21462157368659973 |
 | Final Eva      | 0.9503572583198548 | 0.9621573686599731 | 0.22783146798610687 |
 
+Note Final ConvNext and Final Eva are the models we used for the final submission. And are trained again from checkpoints of the best models. So their results are slightly better than the best models.
+
 # Chapter 6: Results
-For our submition we made predictions on the test set using the final model checkpoints. 
+For our submition we made predictions on the 3 test sets from `labels/test_setX.txt`using the final model checkpoints. 
 First we made predictions on the test set using the ConvNext model. Then we made predictions on the test set using the Eva model. Finally we combined the predictions from the two models using the following formula:
 
 `final_prediction = 0.75 * ConvNext_prediction + 0.25 * Eva_prediction`
@@ -124,12 +127,12 @@ for each test set.
 
 Code in: 
 
-The predictions of each model are an average of 10 predictions made on each of the test sets. Since the dataloader chooses random sequences of 5 frames from the videos. The predictions are averaged to reduce the variance of the predictions. We also logged the rmse beetwen pairs of predictions to check for consistency. With the ConvNext model the average rmse was 0.16.
+The predictions of each model are an average of 10 predictions made on each of the test sets. Since the dataloader chooses random sequences of 5 frames from the videos. The predictions are averaged to reduce the variance of the predictions. We also logged the RMSE beetwen pairs of predictions to check for consistency. With the ConvNext model the average RMSE was 0.16.
 
 Since the predictions are non deterministic its difficult to reproduce the exact same results. But the results should be similar. In our testing the closest final predictions we got were:
 
-- ConvNext mae = 0.033634803569506086,  using seed 32585
-- Eva mae = 0.04175368133045378 using seed 7327
+- ConvNext MAE = 0.033634803569506086,  using seed 32585
+- Eva MAE = 0.04175368133045378 using seed 7327
   
   
 Final difference (combined above predictions)
