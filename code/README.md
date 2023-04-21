@@ -140,11 +140,22 @@ Code in: `convnext_prediction_analysis.ipynb`, `eva_prediction_analysis.ipynb`,`
 
 # Chapter 7: Reproducibility
 to reproduce similar results follow these steps:
+To avoid retraining you can continue from step 6.
 
 1. prepare the dataset
 2. `1_train_convnext.sh`
-3. `2_train_eva.sh`
-4. `3_train_convnext_again.sh`
-5. `4_train_eva_again.sh` 
+3. `1_train_eva.sh`
+4. `2_train_convnext_again.sh`
+5. `2_train_eva_again.sh` 
+you should have checkpoints in the `convnext_model` and `eva_model` folders you can use existing ones from the repo that were used for the final submission.(37orwro0) and (y23waiez)
    
-6. 
+6. do predictions on the test set
+   Note closest prediction seed is set to 32585 for ConvNext and 7327 for Eva
+`3_predict_convnext.sh`
+`3_predict_eva.sh`
+
+7. combine the predictions
+`4_combine_predictions.sh`
+
+
+

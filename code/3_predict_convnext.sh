@@ -16,10 +16,10 @@
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate pytorch_env
 
-seed=7327 #closest result seed
+seed=32585 #closest result seed or -1 for no seed
 out_predictions_dir='./predictions/'
-cp_id='37orwro0' 
+cp_id='y23waiez' 
 
 
 #script is made to run on 1 node with 1 gpu
-srun --nodes=1 --exclusive --gpus=1 --ntasks-per-node=1 --time=0-3:00:00 -p gpu python search_predict_ema.py --seed $seed --out_predictions_dir $out_predictions_dir --cp_id $cp_id --x_predictions 10
+srun --nodes=1 --exclusive --gpus=1 --ntasks-per-node=1 --time=0-3:00:00 -p gpu python search_predict_convnext.py --seed $seed --out_predictions_dir $out_predictions_dir --cp_id $cp_id --x_predictions 10
