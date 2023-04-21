@@ -68,7 +68,7 @@ The model's structure is similar to the ConvNext model, with the difference that
 Both models use RMSE as the loss function and AdamW as the optimizer with a learning rate of 2e-5. They also use ReduceLROnPlateau as a learning rate scheduler with a factor of 0.1, patience of 2 and monitor of the validation loss.
 We used early stopping with a patience of 4 monitoring the validation loss.
 
-With the training done on HPC we used Pytorch Lightning to handle the training loop and logging. Models were trained on 2 Tesla V100S-32GB GPUs using `ddp` strategy.
+With the training done on HPC we used Pytorch Lightning to handle the training loop and logging. Models were trained on 2 Tesla V100S-32GB GPUs using `ddp` strategy
 with the following hyperparameters:
 - batch_size: 2
 - dropout: 0.1
