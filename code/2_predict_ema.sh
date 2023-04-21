@@ -1,10 +1,10 @@
 #!/bin/sh
-#SBATCH --job-name=train_eva
-#SBATCH --output=train_eva_%j.out
-#SBATCH --error=train_eva_%j.err
+#SBATCH --job-name=predict_convnext
+#SBATCH --output=predict_convnext_%j.out
+#SBATCH --error=predict_convnext_%j.err
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=2
-#SBATCH --gres=gpu:2
+#SBATCH --ntasks-per-node=1
+#SBATCH --gres=gpu:1
 #SBATCH --mem=0
 #SBATCH --cpus-per-task=12
 #SBATCH --time=0-10:00:00
@@ -16,8 +16,10 @@
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate pytorch_env
 
-seed=69
+seed=7327 #closest result seed
+out_predictions_dir='./predictions/'
+cp_id='37orwro0' 
 
-export WANDB__SERVICE_WAIT=300
-#script is made to run on 1 node with 2 gpus
-srun --nodes=1 --exclusive --gpus=2 --ntasks-per-node=2 --time=0-10:00:00 -p gpu python train_eva.py --seed $seed
+
+#script is made to run on 1 node with 1 gpu
+srun --nodes=1 --exclusive --gpus=1 --ntasks-per-node=1 --time=0-3:00:00 -p gpu python search_predict_ema.py --seed $seed --out_predictions_dir $out_predictions_dir --cp_id $cp_id --x_predictions 10

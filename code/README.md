@@ -1,6 +1,6 @@
 # Chapter 1: Introduction
 
-The goal of this project was to predict MOS of DeepFake videos from DFGC-2021 dataset. The code was developed in 15 days and lots of different approaches and architectures were tested. The following is a summary of our final solution.
+The goal of this project was to predict MOS of DeepFake videos from DFGC dataset. The code was developed in 15 days and lots of different approaches and architectures were tested. The following is a summary of our final solution.
 
 
 # Chapter 2: Preprocessing
@@ -138,7 +138,13 @@ Test 3 | 0.02521169583002726 | 0.9988755923377973
 Code in: `convnext_prediction_analysis.ipynb`, `eva_prediction_analysis.ipynb`,`prediction_diff.ipynb`
 
 
+# Chapter 7: Reproducibility
+to reproduce similar results follow these steps:
 
-
-
-# Chapter 7: Conclusion and Future Work
+1. prepare the dataset
+2. `1_train_convnext.sh`
+3. `2_train_eva.sh`
+4. `3_train_convnext_again.sh`
+5. `4_train_eva_again.sh` 
+   
+6. 
