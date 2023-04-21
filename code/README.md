@@ -150,13 +150,13 @@ Code in: `convnext_prediction_analysis.ipynb`, `eva_prediction_analysis.ipynb`,`
 To reproduce similar results follow these steps:
 Note to avoid retraining you can skip step 2 and 3 and use the checkpoints from the `convnext_models` and `eva_models` folders used for the final submission.
 
-##### 1. Prepare the dataset
+#### 1. Prepare the dataset
 You can download the dataset from the link in the dataset section and extract it in the `dataset` folder.
 Or run the `0_prepare_dataset.sh` script to extract faces from the original DFGC dataset to the `dataset` folder. This will take a while. 
 
 
 
-##### 2. Train the models
+#### 2. Train the models
 
 Train your models using the following scripts:
  `1_train_convnext.sh`
@@ -167,7 +167,7 @@ We decided to use the best model from multiple runs. We employed this strategy f
 
 After training is done you should have checkpoints in the `convnext_models` and `eva_models` directories. The checkpoints are saved in the format `(wandb_id)/(wandb_id).pt`
 
-##### 3. Train the models again 
+#### 3. Train the models again 
 
 Use the existing checkpoints from the previous step to train the models again.
 Run the `2_train_convnext_again.sh` and `2_train_eva_again.sh` scripts. This will train the models again from the checkpoints provided in the `--cp_id` argument.
@@ -180,14 +180,14 @@ example: `python train_convnext_again.py --cp_id (wandb_id)`
 `y23waiez`- final ConvNext model checkpoint
 `37orwro0`- final Eva model checkpoint
 
-##### 4. Make predictions
+#### 4. Make predictions
 Make predictions on the test sets using the following scripts:
 `3_predict_convnext.sh`
 `3_predict_eva.sh`
 The results will be saved in the `predictions` directory in the form of `(wandb_id)/(seed)/TestX_preds.txt`
 Note the seed is set to 32585 for ConvNext and 7327 for Eva as they are closest ot the original predictions.
 
-##### 5. Combine predictions
+#### 5. Combine predictions
 Now that we have predictions from both models. We combine them using `4_combine_predictions.sh`
 The results will be saved in the `predictions` directory in the form of `/combined/TestX_preds.txt`
 
