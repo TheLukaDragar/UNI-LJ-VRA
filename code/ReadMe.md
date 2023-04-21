@@ -91,7 +91,15 @@ Final Eva model run details: https://api.wandb.ai/links/luka_borut/f8pff5ux
 
 
 # Chapter 5: Validation and Evaluation
+After training was done we used the best model checkpoint to make predictions on the test set. The results of are best models are as follows:
 
+
+| Model    | PLCC | SRCC | RMSE | 
+| ----------- | ----------- | ----------- | ----------- |
+| Best ConvNext      | 0.9374769926071168       | 0.910971224308014       | 0.2704703211784363       |
+| Best Eva | 0.9335209131240844 | 0.9147642850875854 | 0.2935817241668701 |
+| Final ConvNext | 0.9676593542099 | 0.9616091251373292 | 0.21462157368659973 |
+| Final Eva | 0.9503572583198548 | 0.9621573686599731 | 0.22783146798610687 |
 
 # Chapter 6: Results and Analysis
 
