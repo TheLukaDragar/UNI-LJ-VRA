@@ -27,7 +27,7 @@ The main idea was to use an existing model for DeepFake detections from last yea
 
 
 ### 3.1.1: Data
-`RandomSeqFaceFramesDataset`from `dataset_tool.py` processes each video in the dataset by randomly selecting a sequence of frames with a specified length(`seq_len=5`). The chosen sequence originates from a random starting point within the video. each frame is then transformed according to the specified transforms for the model. Finally it returns these seqences with the coresponding MOS labels.
+`RandomSeqFaceFramesDataset`from `dataset_tool.py` processes each video in the dataset by randomly selecting a sequence of frames with a specified length(`seq_len=5`). The chosen sequence originates from a random starting point within the video. Each frame is then transformed according to the specified transforms for the model. Finally it returns these seqences with the coresponding MOS labels.
 
 The dataset is then randomly split into train, validation and test sets.
 - Train: 70%
@@ -60,7 +60,7 @@ Note that we did not freeze the backbone model's weights, as we wanted to fine-t
 analogous to ConvNext
 
 ### 3.2.2: Model
-The model is based on the Eva architecture and is initialized using the pre-trained weights from timm (`eva_large_patch14_336.in22k_ft_in22k_in1k`)
+The model is based on the Eva architecture and is initialized using the pre-trained weights from Pytorch Image Models (timm) (`eva_large_patch14_336.in22k_ft_in22k_in1k`)
 The model's structure is similar to the ConvNext model, with the difference that the final fully connected layers have different sizes to account for the 1024 output features of the Eva model.
 
 
