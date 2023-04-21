@@ -89,6 +89,12 @@ Final ConvNext model run details: https://api.wandb.ai/links/luka_borut/6ak9snqi
 
 Final Eva model run details: https://api.wandb.ai/links/luka_borut/f8pff5ux
 
+Code in: 
+`train_convnext.py`
+`train_eva.py`
+`train_convnext_again.py`
+`train_eva_again.py`
+
 
 # Chapter 5: Validation and Evaluation
 After training was done we used the best model checkpoint to make predictions on the test set. The results of are best models are as follows:
@@ -101,6 +107,34 @@ After training was done we used the best model checkpoint to make predictions on
 | Final ConvNext | 0.9676593542099 | 0.9616091251373292 | 0.21462157368659973 |
 | Final Eva | 0.9503572583198548 | 0.9621573686599731 | 0.22783146798610687 |
 
-# Chapter 6: Results and Analysis
+# Chapter 6: Results
+For our submition we made predictions on the test set using the final model checkpoints. 
+First we made predictions on the test set using the ConvNext model. Then we made predictions on the test set using the Eva model. Finally we combined the predictions from the two models using the following formula:
+
+`final_prediction = 0.75 * ConvNext_prediction + 0.25 * Eva_prediction`
+
+for each test set.
+
+Code in: 
+
+The predictions of each model are an average of 10 predictions made on each of the test sets. Since the dataloader chooses random sequences of 5 frames from the videos. The predictions are averaged to reduce the variance of the predictions. We also logged the rmse beetwen pairs of predictions to check for consistency. With the ConvNext model the average rmse was 0.16.
+
+Since the predictions are non deterministic its difficult to reproduce the exact same results. But the results should be similar. In our testing the closest final predictions we got were:
+
+- ConvNext mae = 0.033634803569506086,  using seed 32585
+- Eva mae = 0.04175368133045378 using seed 7327
+- Final difference (combined above predictions)
+    test1 mae: 0.03007248560587565
+    test2 mae: 0.025541501492261885
+    test3 mae: 0.02521169583002726
+    test1 corrcoef: 0.9976959864175539
+    test2 corrcoef: 0.9989781149798285
+    test3 corrcoef: 0.9988755923377973
+
+details in: `convnext_prediction_analysis.ipynb`, `eva_prediction_analysis.ipynb`,`prediction_diff.ipynb`
+
+
+
+
 
 # Chapter 7: Conclusion and Future Work
