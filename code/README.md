@@ -4,7 +4,7 @@ The goal of this project was to predict MOS of DeepFake videos from DFGC dataset
 
 
 # Chapter 2: Preprocessing
-The preprocessing of the data is done in the `0_extract_faces.py` file. You can download it here: https://unilj-my.sharepoint.com/:u:/g/personal/borutb_fri1_uni-lj_si/EeTxtClKf3hHkmxuq097fLoBrIXFAPE0HBeoVWwIKmUswg?e=wdERaI 
+The preprocessing of the data is done in the `0_extract_faces.py` file. You can download it here: [DataBASE (92,7 GB)](https://unilj-my.sharepoint.com/:u:/g/personal/borutb_fri1_uni-lj_si/EeTxtClKf3hHkmxuq097fLoBrIXFAPE0HBeoVWwIKmUswg?e=begR1X) 
  and skip the preprocessing step 
 
 
