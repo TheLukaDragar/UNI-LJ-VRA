@@ -102,12 +102,12 @@ Code in:
 After training was done we used the best model checkpoint to make predictions on the test set. The results of are best models are as follows:
 
 
-| Model    | PLCC | SRCC | RMSE | 
-| ----------- | ----------- | ----------- | ----------- |
-| Best ConvNext      | 0.9374769926071168       | 0.910971224308014       | 0.2704703211784363       |
-| Best Eva | 0.9335209131240844 | 0.9147642850875854 | 0.2935817241668701 |
-| Final ConvNext | 0.9676593542099 | 0.9616091251373292 | 0.21462157368659973 |
-| Final Eva | 0.9503572583198548 | 0.9621573686599731 | 0.22783146798610687 |
+| Model          | PLCC               | SRCC               | RMSE                |
+| -------------- | ------------------ | ------------------ | ------------------- |
+| Best ConvNext  | 0.9374769926071168 | 0.910971224308014  | 0.2704703211784363  |
+| Best Eva       | 0.9335209131240844 | 0.9147642850875854 | 0.2935817241668701  |
+| Final ConvNext | 0.9676593542099    | 0.9616091251373292 | 0.21462157368659973 |
+| Final Eva      | 0.9503572583198548 | 0.9621573686599731 | 0.22783146798610687 |
 
 # Chapter 6: Results
 For our submition we made predictions on the test set using the final model checkpoints. 
@@ -129,11 +129,11 @@ Since the predictions are non deterministic its difficult to reproduce the exact
   
 Final difference (combined above predictions)
 
-| Test Set    | MAE | Correlation Coefficient | 
-| ----------- | ----------- | ----------- | 
-Test 1 | 0.03007248560587565 | 0.9976959864175539
-Test 2 | 0.025541501492261885 | 0.9989781149798285
-Test 3 | 0.02521169583002726 | 0.9988755923377973
+| Test Set | MAE                  | Correlation Coefficient |
+| -------- | -------------------- | ----------------------- |
+| Test 1   | 0.03007248560587565  | 0.9976959864175539      |
+| Test 2   | 0.025541501492261885 | 0.9989781149798285      |
+| Test 3   | 0.02521169583002726  | 0.9988755923377973      |
 
 Code in: `convnext_prediction_analysis.ipynb`, `eva_prediction_analysis.ipynb`,`prediction_diff.ipynb`
 
