@@ -119,11 +119,9 @@ Note Final ConvNext and Final Eva are the models we used for the final submissio
 
 # Chapter 6: Results
 For our submition we made predictions on the 3 test sets from `labels/test_setX.txt`using the final model checkpoints. 
-First we made predictions on the test set using the ConvNext model. Then we made predictions on the test set using the Eva model. Finally we combined the predictions from the two models using the following formula:
+First we made predictions on the test sets using the ConvNext model. Then we made predictions on the test sets using the Eva model. Finally we combined the predictions from the two models using the following formula:
 
 `final_prediction = 0.75 * ConvNext_prediction + 0.25 * Eva_prediction`
-
-for each test set.
 
 Code in: `predict_convnext.py`, `predict_eva.py`, `combine_predictions.py`
 
