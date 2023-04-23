@@ -340,7 +340,7 @@ if __name__ == '__main__':
    
 
     #read all files in the folder
-    submition="/d/hpc/home/ld8435/code/eva_models/37orwro0/dotren_ema37orwro0_final_modl_10_avgpreds/"
+    submition="./eva_models/37orwro0/dotren_ema37orwro0_final_modl_10_avgpreds/"
     names=["Test1_preds.txt","Test2_preds.txt","Test3_preds.txt"]
     results=[]
     
